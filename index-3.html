@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Uzlayn TV</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#5b8cff"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Uzlayn TV"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #09090f; color: #f0f0fa; font-family: system-ui, sans-serif; min-height: 100vh; }
+
+    /* NAV */
+    nav {
+      background: rgba(9,9,15,.97); border-bottom: 1px solid #18182a;
+      padding: 0 16px; height: 52px;
+      display: flex; align-items: center; gap: 10px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo { font-weight: 900; font-size: 17px; background: linear-gradient(135deg,#5b8cff,#a259ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .user-info { font-size: 12px; color: #5060a0; }
+
+    /* USER ICON BUTTON */
+    .user-icon-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #13131e; border: 1px solid #20202e;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .user-icon-btn:hover { border-color: #5b8cff; background: rgba(91,140,255,.1); }
+    .user-icon-btn.logged { background: linear-gradient(135deg,#5b8cff,#a259ff); border-color: transparent; }
+    .user-icon-btn svg { width: 18px; height: 18px; }
+
+    /* AD */
+    #adTop { padding: 8px 16px; display: none; }
+    #adTop.show { display: block; }
+
+    /* ADMIN PANEL */
+    #adminPanel { display: none; border-bottom: 2px solid #1e1e30; }
+    #adminPanel.open { display: block; }
+    .admin-tabs { display: flex; background: #0c0c18; border-bottom: 1px solid #1a1a2e; overflow-x: auto; scrollbar-width: none; }
+    .admin-tabs::-webkit-scrollbar { display: none; }
+    .atab { padding: 12px 18px; font-size: 12px; font-weight: 600; color: #404060; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; transition: all .18s; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+    .atab:hover { color: #8080c0; }
+    .atab.active { color: #5b8cff; border-bottom-color: #5b8cff; background: rgba(91,140,255,.05); }
+    .admin-content { background: #0c0c18; padding: 16px; }
+    .admin-page { display: none; }
+    .admin-page.active { display: block; }
+
+    .field { margin-bottom: 12px; }
+    .field label { font-size: 11px; color: #505080; display: block; margin-bottom: 5px; }
+    .field input, .field select, .field textarea { width: 100%; background: #131320; border: 1px solid #20202e; color: #f0f0fa; font-size: 13px; padding: 10px 13px; border-radius: 9px; outline: none; font-family: inherit; transition: border .2s; resize: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #5b8cff; }
+    .field input::placeholder, .field textarea::placeholder { color: #252540; }
+    .field select option { background: #13131e; }
+    .field textarea { min-height: 80px; font-size: 11px; font-family: 'Courier New', monospace; }
+    .hint { font-size: 11px; color: #303050; line-height: 1.6; margin-top: 4px; }
+    .row { display: flex; gap: 8px; }
+    .row .field { flex: 1; }
+    .btn { padding: 10px 18px; border-radius: 9px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; transition: opacity .2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn-primary { background: linear-gradient(135deg,#5b8cff,#a259ff); color: #fff; }
+    .btn-primary:hover { opacity: .85; }
+    .btn-danger { background: linear-gradient(135deg,#ff4f6a,#cc2244); color: #fff; }
+    .btn-ghost { background: #1a1a2e; color: #7070a0; border: 1px solid #2a2a3e; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; }
+
+    /* VIDEO LIST */
+    .vid-list { display: flex; flex-direction: column; gap: 8px; }
+    .vid-item { background: #131320; border: 1px solid #1e1e2e; border-radius: 10px; overflow: hidden; }
+    .vid-item-header { display: grid; grid-template-columns: 80px 1fr auto; gap: 10px; align-items: center; padding: 10px; }
+    .vid-item-thumb { width: 80px; aspect-ratio: 16/9; border-radius: 6px; overflow: hidden; background: #060612; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .vid-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .vid-item-thumb .no-th { font-size: 22px; color: #202030; }
+    .vid-item-info { min-width: 0; }
+    .vid-item-title { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vid-item-meta { font-size: 10px; color: #404060; margin-top: 3px; }
+    .vid-item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .vid-edit-form { display: none; padding: 12px; border-top: 1px solid #1a1a2e; background: #0f0f1c; }
+    .vid-edit-form.open { display: block; }
+
+    /* PLAYER */
+    .player-section { padding: 14px 16px 0; }
+    .player-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid #18182a; box-shadow: 0 0 40px rgba(91,140,255,.08); }
+    .player-wrap video { width: 100%; height: 100%; display: block; }
+    .player-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
+    .no-video { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: #252535; }
+    .no-video .nvi { font-size: 48px; }
+    .now-title { font-size: 13px; font-weight: 600; color: #c0c0e0; padding: 10px 2px 0; }
+
+    #adMid, #adBottom { padding: 12px 16px; display: none; }
+    #adMid.show, #adBottom.show { display: block; }
+
+    /* GRID */
+    .section { padding: 16px 16px 30px; }
+    .sec-h { font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    .empty-grid { text-align: center; padding: 40px 20px; color: #252535; }
+    .empty-grid .ei { font-size: 44px; margin-bottom: 10px; }
+    .empty-grid p { font-size: 13px; line-height: 1.7; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px,1fr)); gap: 10px; }
+    .card { border-radius: 10px; overflow: hidden; background: #111120; border: 1px solid #18182a; cursor: pointer; transition: transform .2s, border-color .2s; }
+    .card:hover { transform: translateY(-3px); border-color: rgba(91,140,255,.35); }
+    .card.active { border-color: #5b8cff; box-shadow: 0 0 20px rgba(91,140,255,.12); }
+    .card-thumb { width: 100%; aspect-ratio: 16/9; background: #060612; position: relative; overflow: hidden; }
+    .card-thumb img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+    .card:hover .card-thumb img { transform: scale(1.05); }
+    .no-th-card { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #1a1a30; }
+    .card-ov { position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background .2s; display: flex; align-items: center; justify-content: center; }
+    .card:hover .card-ov, .card.active .card-ov { background: rgba(0,0,0,.4); }
+    .card-ov svg { opacity: 0; transition: opacity .2s; }
+    .card:hover .card-ov svg, .card.active .card-ov svg { opacity: 1; }
+    .play-badge { position: absolute; top: 5px; left: 5px; background: #5b8cff; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+    .type-badge { position: absolute; bottom: 5px; right: 5px; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+    .badge-mp4 { background: rgba(0,200,100,.15); color: #00c864; }
+    .badge-m3u8 { background: rgba(255,160,0,.15); color: #ffa000; }
+    .badge-vk { background: rgba(91,140,255,.15); color: #5b8cff; }
+    .card-body { padding: 8px 9px 10px; }
+    .card-title { font-size: 11px; font-weight: 600; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .card-date { font-size: 10px; color: #303050; margin-top: 3px; }
+
+    /* ═══ MODAL SYSTEM ═══ */
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,.8);
+      z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px;
+      animation: fadeIn .18s ease;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal {
+      background: #13131e; border: 1px solid #2a2a3e;
+      border-radius: 18px; padding: 24px; width: 100%; max-width: 360px;
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .modal h3 { font-size: 16px; font-weight: 800; margin-bottom: 6px; }
+    .modal .sub { font-size: 12px; color: #404060; margin-bottom: 18px; }
+    .modal-input {
+      width: 100%; background: #0d0d18; border: 1px solid #20202e;
+      color: #f0f0fa; font-size: 13px; padding: 11px 14px;
+      border-radius: 10px; outline: none; font-family: inherit;
+      margin-bottom: 10px; transition: border .2s;
+    }
+    .modal-input:focus { border-color: #5b8cff; }
+    .modal-input::placeholder { color: #252540; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 4px; }
+    .modal-btns button { flex: 1; padding: 11px; border-radius: 10px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .mb-cancel { background: #1a1a2e; color: #6060a0; }
+    .mb-ok { background: linear-gradient(135deg,#5b8cff,#a259ff); color: #fff; }
+    .modal-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+    .modal-divider span { font-size: 11px; color: #303050; white-space: nowrap; }
+    .modal-divider::before, .modal-divider::after { content:''; flex:1; height:1px; background:#1e1e2e; }
+    .modal-switch { font-size: 12px; color: #404060; text-align: center; margin-top: 14px; }
+    .modal-switch a { color: #5b8cff; cursor: pointer; text-decoration: none; }
+    .modal-switch a:hover { text-decoration: underline; }
+    .modal-err { font-size: 12px; color: #ff6060; margin-bottom: 10px; padding: 8px 12px; background: rgba(255,60,60,.08); border-radius: 8px; display: none; }
+    .modal-err.show { display: block; }
+
+    /* UPLOAD MODAL */
+    .upload-modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,.85);
+      z-index: 500; display: flex; align-items: flex-end;
+      animation: fadeIn .18s ease;
+    }
+    .upload-modal {
+      background: #13131e; border: 1px solid #2a2a3e;
+      border-radius: 22px 22px 0 0; padding: 24px 20px 36px;
+      width: 100%; max-width: 500px; margin: 0 auto;
+      animation: slideUpSheet .25s ease;
+    }
+    @keyframes slideUpSheet { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .upload-handle {
+      width: 40px; height: 4px; background: #2a2a3e;
+      border-radius: 2px; margin: 0 auto 20px;
+    }
+    .upload-modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .upload-modal .sub { font-size: 13px; color: #404060; margin-bottom: 20px; }
+
+    /* REGISTER PROMO (для незарегистрированных) */
+    .reg-promo {
+      text-align: center; padding: 10px 0 6px;
+    }
+    .reg-promo .promo-icon {
+      font-size: 52px; margin-bottom: 12px; display: block;
+    }
+    .reg-promo h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+    .reg-promo p { font-size: 13px; color: #5060a0; line-height: 1.6; margin-bottom: 20px; }
+    .reg-promo .features {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 22px; text-align: left;
+    }
+    .reg-promo .feat-item {
+      display: flex; align-items: center; gap: 10px;
+      background: #0f0f1c; border: 1px solid #1e1e2e;
+      border-radius: 10px; padding: 10px 14px;
+      font-size: 13px; color: #c0c0e0;
+    }
+    .reg-promo .feat-item span { font-size: 18px; }
+
+    /* USER DROPDOWN */
+    .user-dropdown {
+      position: absolute; top: 56px; right: 16px;
+      background: #13131e; border: 1px solid #2a2a3e;
+      border-radius: 12px; padding: 8px; min-width: 200px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.6); z-index: 200;
+      animation: slideUp .15s ease;
+    }
+    .ud-header { padding: 8px 10px 12px; border-bottom: 1px solid #1e1e2e; margin-bottom: 6px; }
+    .ud-name { font-size: 13px; font-weight: 700; }
+    .ud-role { font-size: 11px; color: #404060; margin-top: 2px; }
+    .ud-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 13px; color: #c0c0e0; transition: background .15s;
+    }
+    .ud-item:hover { background: rgba(255,255,255,.05); }
+    .ud-item.danger { color: #ff6060; }
+    .ud-item.danger:hover { background: rgba(255,60,60,.08); }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a2e; border: 1px solid #2e2e44; color: #f0f0fa; font-size: 12px; padding: 9px 18px; border-radius: 9px; z-index: 999; transition: opacity .3s; white-space: nowrap; box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+
+    /* PWA INSTALL BANNER */
+    .pwa-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #13131e, #1a1a2e);
+      border-top: 1px solid #2a2a3e;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      z-index: 300; animation: slideUpBanner .3s ease;
+      box-shadow: 0 -8px 30px rgba(0,0,0,.5);
+    }
+    @keyframes slideUpBanner { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    .pwa-banner .pwa-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: linear-gradient(135deg,#5b8cff,#a259ff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .pwa-banner .pwa-text { flex: 1; }
+    .pwa-banner .pwa-text h4 { font-size: 13px; font-weight: 700; }
+    .pwa-banner .pwa-text p { font-size: 11px; color: #5060a0; margin-top: 2px; }
+    .pwa-banner .pwa-btns { display: flex; gap: 8px; flex-shrink: 0; }
+    .pwa-install-btn {
+      background: linear-gradient(135deg,#5b8cff,#a259ff);
+      color: #fff; font-size: 12px; font-weight: 700;
+      padding: 8px 16px; border-radius: 8px; border: none;
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .pwa-close-btn {
+      background: #1e1e2e; color: #5060a0; font-size: 12px;
+      padding: 8px 12px; border-radius: 8px; border: 1px solid #2a2a3e;
+      cursor: pointer; font-family: inherit;
+    }
+
+    @media(max-width:420px) { .grid { grid-template-columns: repeat(2,1fr); } }
+
+    /* ═══ FULLSCREEN VIDEO PLAYER (TikTok style) ═══ */
+    .fs-player {
+      position: fixed; inset: 0; background: #000;
+      z-index: 600; display: none;
+      flex-direction: column; overflow: hidden;
+      touch-action: none;
+    }
+    .fs-player.open { display: flex; }
+
+    /* Slides container */
+    .fs-slides {
+      flex: 1; position: relative; overflow: hidden;
+    }
+    .fs-slide {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .35s cubic-bezier(.4,0,.2,1);
+      background: #000;
+    }
+    .fs-slide video {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+      max-height: 100vh;
+    }
+    .fs-slide iframe {
+      width: 100%; height: 100%; border: none; display: block;
+    }
+    .fs-slide .fs-thumb {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .fs-slide .fs-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .fs-slide .fs-thumb-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,.3);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Gradient overlays */
+    .fs-slide .fs-top-grad {
+      position: absolute; top: 0; left: 0; right: 0; height: 120px;
+      background: linear-gradient(to bottom, rgba(0,0,0,.6), transparent);
+      pointer-events: none; z-index: 2;
+    }
+    .fs-slide .fs-bottom-grad {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 200px;
+      background: linear-gradient(to top, rgba(0,0,0,.85), transparent);
+      pointer-events: none; z-index: 2;
+    }
+
+    /* Video info overlay */
+    .fs-info {
+      position: absolute; bottom: 0; left: 0; right: 60px;
+      padding: 20px 16px 30px; z-index: 3; pointer-events: none;
+    }
+    .fs-info .fs-user {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .fs-info .fs-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg,#5b8cff,#a259ff);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .fs-info .fs-username { font-size: 13px; font-weight: 700; color: #fff; }
+    .fs-info .fs-title {
+      font-size: 14px; font-weight: 600; color: #fff;
+      line-height: 1.4; text-shadow: 0 1px 4px rgba(0,0,0,.5);
+    }
+    .fs-info .fs-date { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 4px; }
+
+    /* Side actions */
+    .fs-actions {
+      position: absolute; right: 0; bottom: 0;
+      padding: 0 10px 30px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      z-index: 3;
+    }
+    .fs-action-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      cursor: pointer; color: #fff;
+    }
+    .fs-action-btn .fa-circle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255,255,255,.15); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .fs-action-btn:hover .fa-circle { background: rgba(255,255,255,.25); }
+    .fs-action-btn svg { width: 20px; height: 20px; }
+    .fs-action-btn span { font-size: 10px; color: rgba(255,255,255,.7); }
+
+    /* Top bar */
+    .fs-topbar {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+      z-index: 4;
+    }
+    .fs-close {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(0,0,0,.4); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; color: #fff; flex-shrink: 0;
+    }
+    .fs-close svg { width: 18px; height: 18px; }
+    .fs-top-title {
+      font-size: 14px; font-weight: 700; color: #fff;
+      flex: 1; text-align: center;
+      text-shadow: 0 1px 4px rgba(0,0,0,.5);
+    }
+
+    /* Nav arrows */
+    .fs-nav-btn {
+      position: absolute; right: 16px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(255,255,255,.12); backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 1px solid rgba(255,255,255,.15);
+      color: #fff; z-index: 4; transition: background .2s;
+    }
+    .fs-nav-btn:hover { background: rgba(255,255,255,.22); }
+    .fs-nav-up { top: 60px; }
+    .fs-nav-down { bottom: 90px; }
+    .fs-nav-btn svg { width: 16px; height: 16px; }
+
+    /* Progress bar */
+    .fs-progress {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 3px; background: rgba(255,255,255,.15); z-index: 5;
+    }
+    .fs-progress-bar {
+      height: 100%; background: linear-gradient(90deg,#5b8cff,#a259ff);
+      transition: width .1s linear; width: 0%;
+    }
+
+    /* Swipe hint */
+    .fs-swipe-hint {
+      position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,.5); color: rgba(255,255,255,.6);
+      font-size: 11px; padding: 6px 14px; border-radius: 20px;
+      z-index: 4; pointer-events: none;
+      animation: fadeOut 3s forwards;
+    }
+    @keyframes fadeOut { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">▶ UZLAYN TV</div>
+  <div class="nav-right">
+    <span class="user-info" id="navUserInfo"></span>
+    <!-- ИКОНКА ЗАГРУЗКИ ВИДЕО -->
+    <div class="user-icon-btn" id="uploadIconBtn" onclick="openUploadOrRegister()" title="Добавить видео">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </div>
+    <!-- ИКОНКА ПРОФИЛЯ -->
+    <div class="user-icon-btn" id="userIconBtn" onclick="toggleUserMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+    </div>
+  </div>
+</nav>
+
+<!-- USER DROPDOWN (скрыт) -->
+<div class="user-dropdown" id="userDropdown" style="display:none">
+  <div class="ud-header">
+    <div class="ud-name" id="udName">—</div>
+    <div class="ud-role" id="udRole">—</div>
+  </div>
+  <div class="ud-item" id="udAdminItem" style="display:none" onclick="openAdminPanel()">⚙️ Панель администратора</div>
+  <div class="ud-item danger" onclick="logout()">🚪 Выйти</div>
+</div>
+
+<div id="adTop"></div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+  <div class="admin-tabs">
+    <button class="atab active" onclick="switchTab('videos')">📋 Все видео</button>
+    <button class="atab" onclick="switchTab('add')">➕ Добавить</button>
+    <button class="atab" onclick="switchTab('ads')">📢 Реклама</button>
+    <button class="atab" onclick="switchTab('pass')">🔑 Пароль</button>
+  </div>
+  <div class="admin-content">
+    <div class="admin-page active" id="page-videos"><div id="adminVideoList"></div></div>
+    <div class="admin-page" id="page-add">
+      <div class="field"><label>Название видео *</label><input type="text" id="aTitle" placeholder="Например: Мой влог #1"/></div>
+      <div class="field"><label>Тип видео</label>
+        <select id="aType" onchange="updateHint()">
+          <option value="mp4">🎬 MP4</option>
+          <option value="m3u8">📡 M3U8 / HLS стрим</option>
+          <option value="vk">📱 VK Видео</option>
+        </select>
+      </div>
+      <div class="field"><label>Ссылка *</label><input type="text" id="aUrl" placeholder="https://..."/><div class="hint" id="aUrlHint">MP4: прямая ссылка на файл</div></div>
+      <div class="field"><label>Превью (необязательно)</label><input type="text" id="aThumb" placeholder="https://... (картинка)"/></div>
+      <button class="btn btn-primary" onclick="adminAdd()" style="width:100%">➕ Добавить видео</button>
+    </div>
+    <div class="admin-page" id="page-ads">
+      <div class="field"><label>📌 Реклама сверху</label><textarea id="adCodeTop" placeholder="Код Яндекс.Директ..."></textarea></div>
+      <div class="field"><label>📌 Реклама под плеером</label><textarea id="adCodeMid" placeholder="Код Яндекс.Директ..."></textarea></div>
+      <div class="field"><label>📌 Реклама внизу</label><textarea id="adCodeBottom" placeholder="Код Яндекс.Директ..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveAds()" style="width:100%">💾 Сохранить</button>
+    </div>
+    <div class="admin-page" id="page-pass">
+      <div class="field"><label>Новый пароль</label><input type="password" id="newPw1" placeholder="Минимум 4 символа"/></div>
+      <div class="field"><label>Повтори пароль</label><input type="password" id="newPw2" placeholder="Повтори"/></div>
+      <button class="btn btn-primary" onclick="changePass()" style="width:100%">🔑 Сменить пароль</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER -->
+<div class="player-section">
+  <div class="player-wrap" id="playerWrap">
+    <div class="no-video" id="noVideo"><div class="nvi">📺</div><p>Выбери видео ниже</p></div>
+    <video id="videoPlayer" controls controlsList="nodownload" oncontextmenu="return false" style="display:none" playsinline></video>
+    <iframe id="iframePlayer" style="display:none" allowfullscreen allow="autoplay; encrypted-media; fullscreen"></iframe>
+  </div>
+  <div class="now-title" id="nowTitle"></div>
+</div>
+
+<div id="adMid"></div>
+
+<div class="section">
+  <div class="sec-h" id="gridTitle">📺 Видео</div>
+  <div id="grid"></div>
+</div>
+
+<div id="adBottom"></div>
+
+<!-- PWA INSTALL BANNER -->
+<div class="pwa-banner" id="pwaBanner" style="display:none">
+  <div class="pwa-icon">▶</div>
+  <div class="pwa-text">
+    <h4>Установить Uzlayn TV</h4>
+    <p>Смотри видео как приложение — быстро и удобно</p>
+  </div>
+  <div class="pwa-btns">
+    <button class="pwa-install-btn" onclick="installPwa()">Установить</button>
+    <button class="pwa-close-btn" onclick="dismissPwa()">✕</button>
+  </div>
+</div>
+
+<!-- ═══ FULLSCREEN PLAYER (TikTok style) ═══ -->
+<div class="fs-player" id="fsPlayer">
+  <div class="fs-slides" id="fsSlides">
+    <!-- слайды генерируются динамически -->
+  </div>
+  <!-- Top bar -->
+  <div class="fs-topbar">
+    <button class="fs-close" onclick="closeFs()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="fs-top-title">Uzlayn TV</div>
+    <div style="width:36px"></div>
+  </div>
+  <!-- Nav buttons -->
+  <button class="fs-nav-btn fs-nav-up" onclick="fsPrev()" id="fsNavUp">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+  <button class="fs-nav-btn fs-nav-down" onclick="fsNext()" id="fsNavDown">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+</div>
+
+<!-- ═══ MODAL: UPLOAD VIDEO ═══ -->
+<div class="upload-modal-bg" id="uploadModal" style="display:none" onclick="closeUploadOnBg(event)">
+  <div class="upload-modal">
+    <div class="upload-handle"></div>
+
+    <!-- Если НЕ залогинен — показываем промо -->
+    <div id="uploadPromo">
+      <div class="reg-promo">
+        <span class="promo-icon">🎬</span>
+        <h3>Добавляй свои видео</h3>
+        <p>Зарегистрируйся бесплатно и делись своими видео с аудиторией</p>
+        <div class="features">
+          <div class="feat-item"><span>🚀</span> Быстрое добавление видео</div>
+          <div class="feat-item"><span>🔗</span> Поддержка MP4, M3U8, VK видео</div>
+          <div class="feat-item"><span>👥</span> Делись с другими</div>
+          <div class="feat-item"><span>🆓</span> Полностью бесплатно</div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;padding:13px;font-size:14px" onclick="closeUpload();openAuth();showView('viewRegister')">
+          Зарегистрироваться бесплатно
+        </button>
+        <div style="margin-top:12px;font-size:12px;color:#404060;text-align:center">
+          Уже есть аккаунт? <a style="color:#5b8cff;cursor:pointer" onclick="closeUpload();openAuth();showView('viewLogin')">Войти</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Если залогинен — форма добавления -->
+    <div id="uploadForm" style="display:none">
+      <h3>➕ Добавить видео</h3>
+      <p class="sub">Поделись видео с аудиторией</p>
+      <div class="modal-err" id="uploadErr"></div>
+      <div class="field">
+        <label>Название видео *</label>
+        <input class="modal-input" type="text" id="uTitle" placeholder="Введи название..." style="margin-bottom:0"/>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Тип видео</label>
+        <select id="uType" style="width:100%;background:#0d0d18;border:1px solid #20202e;color:#f0f0fa;font-size:13px;padding:11px 14px;border-radius:10px;outline:none;font-family:inherit;margin-bottom:0">
+          <option value="mp4">🎬 MP4 — прямая ссылка</option>
+          <option value="m3u8">📡 M3U8 — HLS стрим</option>
+          <option value="vk">📱 VK Видео</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Ссылка на видео *</label>
+        <input class="modal-input" type="text" id="uUrl" placeholder="https://..." style="margin-bottom:0"/>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label>Превью (необязательно)</label>
+        <input class="modal-input" type="text" id="uThumb" placeholder="https://... (ссылка на картинку)" style="margin-bottom:0"/>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-ghost" style="flex:1" onclick="closeUpload()">Отмена</button>
+        <button class="btn btn-primary" style="flex:2" onclick="submitUserVideo()">🚀 Опубликовать</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: AUTH ═══ -->
+<div class="modal-bg" id="authModal" style="display:none" onclick="closeAuthOnBg(event)">
+  <div class="modal">
+    <!-- LOGIN VIEW -->
+    <div id="viewLogin">
+      <h3>👋 Добро пожаловать</h3>
+      <p class="sub">Войди в свой аккаунт</p>
+      <div class="modal-err" id="loginErr"></div>
+      <input class="modal-input" type="text" id="loginUser" placeholder="Логин" autocomplete="username"/>
+      <input class="modal-input" type="password" id="loginPass" placeholder="Пароль" autocomplete="current-password"/>
+      <div class="modal-btns">
+        <button class="mb-cancel" onclick="closeAuth()">Закрыть</button>
+        <button class="mb-ok" onclick="doLogin()">Войти</button>
+      </div>
+      <div class="modal-switch">Нет аккаунта? <a onclick="showView('viewRegister')">Зарегистрироваться</a></div>
+    </div>
+    <!-- REGISTER VIEW -->
+    <div id="viewRegister" style="display:none">
+      <h3>📝 Регистрация</h3>
+      <p class="sub">Создай новый аккаунт</p>
+      <div class="modal-err" id="regErr"></div>
+      <input class="modal-input" type="text" id="regUser" placeholder="Придумай логин" autocomplete="username"/>
+      <input class="modal-input" type="password" id="regPass" placeholder="Придумай пароль (мин. 4)" autocomplete="new-password"/>
+      <input class="modal-input" type="password" id="regPass2" placeholder="Повтори пароль" autocomplete="new-password"/>
+      <div class="modal-btns">
+        <button class="mb-cancel" onclick="closeAuth()">Закрыть</button>
+        <button class="mb-ok" onclick="doRegister()">Создать</button>
+      </div>
+      <div class="modal-switch">Уже есть аккаунт? <a onclick="showView('viewLogin')">Войти</a></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// КОНФИГ АДМИНИСТРАТОРА
+// Логин и пароль администратора — хранится как хэш
+// При первом входе с логином "admin" создаётся аккаунт
+// ══════════════════════════════════════════════════════
+const ADMIN_LOGIN = 'admin'; // ← можешь сменить
+
+let currentUser = null; // { login, role: 'admin'|'user' }
+let isAdmin = false;
+let videos = [], activeId = null, nextId = Date.now();
+let passHash = localStorage.getItem('uzlayn_ph') || null;
+let hlsInstance = null;
+let dropdownOpen = false;
+
+// ── SHA-256 ────────────────────────────────────────────
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── XOR ────────────────────────────────────────────────
+function enc(s,k){try{return btoa(unescape(encodeURIComponent(s.split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))).join(''))));}catch(e){return '';}}
+function dec(s,k){try{return decodeURIComponent(escape(atob(s).split('').map((c,i)=>String.fromCharCode(c.charCodeAt(0)^k.charCodeAt(i%k.length))).join('')));}catch(e){return null;}}
+
+// ── Users storage ──────────────────────────────────────
+function getUsers(){
+  try{return JSON.parse(localStorage.getItem('uzlayn_users')||'{}');}catch(e){return {};}
+}
+function saveUsers(u){localStorage.setItem('uzlayn_users',JSON.stringify(u));}
+
+// ── Auth ───────────────────────────────────────────────
+async function doLogin(){
+  const login=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const errEl=document.getElementById('loginErr');
+  if(!login||!pass){showModalErr(errEl,'Заполни все поля');return;}
+
+  const hash=await sha256(pass);
+
+  // Проверяем — это админ?
+  if(login===ADMIN_LOGIN){
+    const storedHash = localStorage.getItem('uzlayn_ph');
+    if(!storedHash){
+      // Первый вход — любой пароль становится паролем админа
+      passHash = hash;
+      localStorage.setItem('uzlayn_ph', hash);
+      loginAs(login,'admin');
+      closeAuth();
+      showToast('✅ Пароль админа установлен: ' + pass);
+      return;
+    }
+    if(hash === storedHash){
+      passHash = storedHash;
+      loginAs(login,'admin');
+      closeAuth();
+    } else {
+      showModalErr(errEl,'Неверный пароль');
+    }
+    return;
+  }
+
+  // Обычный пользователь
+  const users=getUsers();
+  if(!users[login]){showModalErr(errEl,'Пользователь не найден');return;}
+  if(users[login].hash!==hash){showModalErr(errEl,'Неверный пароль');return;}
+  loginAs(login,'user');
+  closeAuth();
+}
+
+async function doRegister(){
+  const login=document.getElementById('regUser').value.trim();
+  const pass=document.getElementById('regPass').value;
+  const pass2=document.getElementById('regPass2').value;
+  const errEl=document.getElementById('regErr');
+
+  if(!login||!pass){showModalErr(errEl,'Заполни все поля');return;}
+  if(login===ADMIN_LOGIN){showModalErr(errEl,'Этот логин занят');return;}
+  if(pass.length<4){showModalErr(errEl,'Пароль минимум 4 символа');return;}
+  if(pass!==pass2){showModalErr(errEl,'Пароли не совпадают');return;}
+  if(!/^[a-zA-Z0-9_]{3,20}$/.test(login)){showModalErr(errEl,'Логин: 3-20 символов, только буквы/цифры/_');return;}
+
+  const users=getUsers();
+  if(users[login]){showModalErr(errEl,'Такой логин уже занят');return;}
+
+  const hash=await sha256(pass);
+  users[login]={hash,createdAt:Date.now()};
+  saveUsers(users);
+  loginAs(login,'user');
+  closeAuth();
+  showToast('✅ Аккаунт создан!');
+}
+
+function loginAs(login,role){
+  currentUser={login,role};
+  isAdmin=(role==='admin');
+  sessionStorage.setItem('uzlayn_session',JSON.stringify(currentUser));
+  updateNavUser();
+  updateUploadIcon();
+  if(isAdmin){
+    loadVideos();
+    document.getElementById('adminPanel').classList.add('open');
+    loadAds();
+    renderAdminVideos();
+  }
+  render();
+  closeUserDropdown();
+  showToast(isAdmin?'✅ Добро пожаловать, '+login+'! (Админ)':'👋 Привет, '+login+'!');
+}
+
+function logout(){
+  currentUser=null; isAdmin=false;
+  sessionStorage.removeItem('uzlayn_session');
+  document.getElementById('adminPanel').classList.remove('open');
+  updateNavUser();
+  updateUploadIcon();
+  closeUserDropdown();
+  render();
+  showToast('Вышел из аккаунта');
+}
+
+// ── Nav user ───────────────────────────────────────────
+function updateNavUser(){
+  const btn=document.getElementById('userIconBtn');
+  const info=document.getElementById('navUserInfo');
+  if(currentUser){
+    btn.classList.add('logged');
+    info.textContent=currentUser.login;
+    document.getElementById('udName').textContent=currentUser.login;
+    document.getElementById('udRole').textContent=isAdmin?'👑 Администратор':'👤 Пользователь';
+    document.getElementById('udAdminItem').style.display=isAdmin?'flex':'none';
+  } else {
+    btn.classList.remove('logged');
+    info.textContent='';
+  }
+}
+
+// ── User dropdown ──────────────────────────────────────
+function toggleUserMenu(){
+  if(!currentUser){openAuth();return;}
+  const dd=document.getElementById('userDropdown');
+  dropdownOpen=!dropdownOpen;
+  dd.style.display=dropdownOpen?'block':'none';
+}
+function closeUserDropdown(){
+  dropdownOpen=false;
+  document.getElementById('userDropdown').style.display='none';
+}
+function openAdminPanel(){
+  closeUserDropdown();
+  document.getElementById('adminPanel').scrollIntoView({behavior:'smooth'});
+}
+document.addEventListener('click',e=>{
+  if(dropdownOpen&&!e.target.closest('#userDropdown')&&!e.target.closest('#userIconBtn'))closeUserDropdown();
+});
+
+// ── Auth modal ─────────────────────────────────────────
+function openAuth(){document.getElementById('authModal').style.display='flex';showView('viewLogin');}
+function closeAuth(){document.getElementById('authModal').style.display='none';}
+function closeAuthOnBg(e){if(e.target===document.getElementById('authModal'))closeAuth();}
+function showView(id){
+  ['viewLogin','viewRegister'].forEach(v=>document.getElementById(v).style.display='none');
+  document.getElementById(id).style.display='block';
+  ['loginErr','regErr'].forEach(e=>{const el=document.getElementById(e);if(el){el.classList.remove('show');el.textContent='';}});
+}
+function showModalErr(el,msg){el.textContent=msg;el.classList.add('show');}
+
+// ── Videos storage ──────────────────────────────────────
+function saveVideos(){if(!passHash)return;localStorage.setItem('uzlayn_vids',enc(JSON.stringify(videos),passHash));}
+function loadVideos(){
+  if(!passHash)return;
+  const r=localStorage.getItem('uzlayn_vids');if(!r)return;
+  try{videos=JSON.parse(dec(r,passHash)||'[]');}catch(e){}
+}
+
+// ── Ads ────────────────────────────────────────────────
+function saveAds(){
+  if(!passHash)return;
+  const t=document.getElementById('adCodeTop').value.trim();
+  const m=document.getElementById('adCodeMid').value.trim();
+  const b=document.getElementById('adCodeBottom').value.trim();
+  localStorage.setItem('uzlayn_ad_t',enc(t,passHash));
+  localStorage.setItem('uzlayn_ad_m',enc(m,passHash));
+  localStorage.setItem('uzlayn_ad_b',enc(b,passHash));
+  applyAd('adTop',t);applyAd('adMid',m);applyAd('adBottom',b);
+  showToast('✅ Реклама сохранена!');
+}
+function loadAds(){
+  if(!passHash)return;
+  const t=dec(localStorage.getItem('uzlayn_ad_t')||'',passHash)||'';
+  const m=dec(localStorage.getItem('uzlayn_ad_m')||'',passHash)||'';
+  const b=dec(localStorage.getItem('uzlayn_ad_b')||'',passHash)||'';
+  document.getElementById('adCodeTop').value=t;
+  document.getElementById('adCodeMid').value=m;
+  document.getElementById('adCodeBottom').value=b;
+  applyAd('adTop',t);applyAd('adMid',m);applyAd('adBottom',b);
+}
+function applyAd(id,code){
+  const el=document.getElementById(id);
+  if(!code){el.className='';el.innerHTML='';el.id=id;return;}
+  el.className='show';el.innerHTML=code;
+  el.querySelectorAll('script').forEach(s=>{const ns=document.createElement('script');if(s.src)ns.src=s.src;else ns.textContent=s.textContent;document.head.appendChild(ns);});
+}
+
+// ── Admin panel tabs ───────────────────────────────────
+function switchTab(name){
+  document.querySelectorAll('.atab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.admin-page').forEach(p=>p.classList.remove('active'));
+  const tabs=['videos','add','ads','pass'];
+  document.querySelectorAll('.atab')[tabs.indexOf(name)].classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
+  if(name==='videos')renderAdminVideos();
+}
+function updateHint(){
+  const hints={mp4:'MP4: прямая ссылка на файл (.mp4)',m3u8:'M3U8: ссылка на HLS стрим (.m3u8)',vk:'VK: vkvideo.ru/video-XXXXX_XXXXX'};
+  document.getElementById('aUrlHint').textContent=hints[document.getElementById('aType').value];
+}
+
+// ── Admin video list ───────────────────────────────────
+function escH(s){return(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderAdminVideos(){
+  const el=document.getElementById('adminVideoList');
+  if(!videos.length){el.innerHTML=`<div style="text-align:center;padding:30px;color:#303050;font-size:13px">Нет видео — добавь во вкладке «Добавить»</div>`;return;}
+  el.innerHTML=`<div class="vid-list">${videos.map(v=>`
+    <div class="vid-item">
+      <div class="vid-item-header">
+        <div class="vid-item-thumb">${v.thumb?`<img src="${v.thumb}" loading="lazy"/>`:`<div class="no-th">🎬</div>`}</div>
+        <div class="vid-item-info">
+          <div class="vid-item-title">${escH(v.title)}</div>
+          <div class="vid-item-meta">${v.type.toUpperCase()} · ${new Date(v.addedAt).toLocaleDateString('ru-RU')}</div>
+        </div>
+        <div class="vid-item-actions">
+          <button class="btn btn-ghost btn-sm" onclick="toggleEdit(${v.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteVideo(${v.id})">🗑</button>
+        </div>
+      </div>
+      <div class="vid-edit-form" id="ef_${v.id}">
+        <div class="field"><label>Название</label><input type="text" id="et_${v.id}" value="${escH(v.title)}"/></div>
+        <div class="field"><label>Тип</label>
+          <select id="ety_${v.id}">
+            <option value="mp4" ${v.type==='mp4'?'selected':''}>🎬 MP4</option>
+            <option value="m3u8" ${v.type==='m3u8'?'selected':''}>📡 M3U8</option>
+            <option value="vk" ${v.type==='vk'?'selected':''}>📱 VK</option>
+          </select>
+        </div>
+        <div class="field"><label>Ссылка</label><input type="text" id="eu_${v.id}" value="${escH(v.url)}"/></div>
+        <div class="field"><label>Превью</label><input type="text" id="eth_${v.id}" value="${escH(v.thumb||'')}"/></div>
+        <div class="row">
+          <button class="btn btn-primary" style="flex:1" onclick="saveEdit(${v.id})">💾 Сохранить</button>
+          <button class="btn btn-ghost" style="flex:1" onclick="toggleEdit(${v.id})">Отмена</button>
+        </div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+function toggleEdit(id){document.getElementById('ef_'+id).classList.toggle('open');}
+function saveEdit(id){
+  const v=videos.find(x=>x.id===id);if(!v)return;
+  v.title=document.getElementById('et_'+id).value.trim()||v.title;
+  v.type=document.getElementById('ety_'+id).value;
+  v.url=document.getElementById('eu_'+id).value.trim()||v.url;
+  v.thumb=document.getElementById('eth_'+id).value.trim();
+  saveVideos();renderAdminVideos();render();showToast('✅ Сохранено!');
+}
+function deleteVideo(id){
+  if(!confirm('Удалить это видео?'))return;
+  videos=videos.filter(v=>v.id!==id);
+  if(activeId===id)stopPlayer();
+  saveVideos();renderAdminVideos();render();showToast('🗑 Удалено');
+}
+function adminAdd(){
+  const title=document.getElementById('aTitle').value.trim();
+  const type=document.getElementById('aType').value;
+  const url=document.getElementById('aUrl').value.trim();
+  const thumb=document.getElementById('aThumb').value.trim();
+  if(!title||!url){showToast('⚠️ Заполни название и ссылку');return;}
+  videos.unshift({id:nextId++,title,type,url,thumb,addedAt:Date.now()});
+  saveVideos();
+  document.getElementById('aTitle').value='';
+  document.getElementById('aUrl').value='';
+  document.getElementById('aThumb').value='';
+  showToast('✅ Видео добавлено!');
+  render();renderAdminVideos();switchTab('videos');
+}
+
+// ── Change password ────────────────────────────────────
+async function changePass(){
+  const p1=document.getElementById('newPw1').value;
+  const p2=document.getElementById('newPw2').value;
+  if(!p1){showToast('⚠️ Введи пароль');return;}
+  if(p1!==p2){showToast('❌ Пароли не совпадают');return;}
+  if(p1.length<4){showToast('⚠️ Минимум 4 символа');return;}
+  const oldHash=passHash;
+  const newHash=await sha256(p1);
+  ['uzlayn_vids','uzlayn_ad_t','uzlayn_ad_m','uzlayn_ad_b'].forEach(k=>{
+    const r=localStorage.getItem(k);
+    if(r&&oldHash){const d=dec(r,oldHash);if(d)localStorage.setItem(k,enc(d,newHash));}
+  });
+  passHash=newHash;
+  localStorage.setItem('uzlayn_ph',newHash);
+  document.getElementById('newPw1').value='';
+  document.getElementById('newPw2').value='';
+  showToast('✅ Пароль изменён!');
+}
+
+// ── Player ─────────────────────────────────────────────
+function vkEmbed(url){const m=url.match(/video(-?\d+)_(\d+)/i);return m?`https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1`:null;}
+function playVideo(id){
+  const v=videos.find(x=>x.id===id);if(!v)return;
+  activeId=id;
+  if(hlsInstance){hlsInstance.destroy();hlsInstance=null;}
+  const vp=document.getElementById('videoPlayer');
+  const ip=document.getElementById('iframePlayer');
+  const nv=document.getElementById('noVideo');
+  vp.style.display='none';ip.style.display='none';nv.style.display='none';
+  document.getElementById('nowTitle').textContent='▶ '+v.title;
+  if(v.type==='vk'){
+    const embed=vkEmbed(v.url);
+    if(!embed){showToast('❌ Не распознана VK ссылка');return;}
+    ip.src=embed;ip.style.display='block';
+  } else if(v.type==='m3u8'){
+    vp.style.display='block';
+    if(Hls.isSupported()){
+      hlsInstance=new Hls();
+      hlsInstance.loadSource(v.url);
+      hlsInstance.attachMedia(vp);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>vp.play().catch(()=>{}));
+    } else if(vp.canPlayType('application/vnd.apple.mpegurl')){
+      vp.src=v.url;vp.load();vp.play().catch(()=>{});
+    }
+  } else {
+    vp.style.display='block';
+    vp.src=v.url;vp.load();vp.play().catch(()=>{});
+  }
+  document.getElementById('playerWrap').scrollIntoView({behavior:'smooth',block:'start'});
+  render();
+}
+function stopPlayer(){
+  if(hlsInstance){hlsInstance.destroy();hlsInstance=null;}
+  activeId=null;
+  const vp=document.getElementById('videoPlayer');
+  const ip=document.getElementById('iframePlayer');
+  vp.pause();vp.src='';vp.style.display='none';
+  ip.src='';ip.style.display='none';
+  document.getElementById('noVideo').style.display='flex';
+  document.getElementById('nowTitle').textContent='';
+}
+
+// ── Render ─────────────────────────────────────────────
+function typeBadge(t){const m={mp4:'badge-mp4',m3u8:'badge-m3u8',vk:'badge-vk'};const l={mp4:'MP4',m3u8:'HLS',vk:'VK'};return `<div class="type-badge ${m[t]||''}">${l[t]||t}</div>`;}
+function render(){
+  const grid=document.getElementById('grid');
+  document.getElementById('gridTitle').textContent=videos.length?`📺 Видео · ${videos.length} шт.`:'📺 Видео';
+  if(!videos.length){grid.innerHTML=`<div class="empty-grid"><div class="ei">🎬</div><p>Видео скоро появятся!</p></div>`;return;}
+  grid.innerHTML=`<div class="grid">${videos.map((v,i)=>`
+    <div class="card ${v.id===activeId?'active':''}" onclick="openFs(${i})">
+      <div class="card-thumb">
+        ${v.thumb?`<img src="${v.thumb}" loading="lazy"/>`:`<div class="no-th-card">🎬</div>`}
+        <div class="card-ov"><svg width="38" height="38" viewBox="0 0 38 38"><circle cx="19" cy="19" r="19" fill="rgba(255,255,255,.2)"/><polygon points="14,10 30,19 14,28" fill="white"/></svg></div>
+        ${v.id===activeId?'<div class="play-badge">▶ ИГРАЕТ</div>':''}
+        ${typeBadge(v.type)}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${escH(v.title)}</div>
+        <div class="card-date">${new Date(v.addedAt).toLocaleDateString('ru-RU')}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+// ── Toast ──────────────────────────────────────────────
+function showToast(msg){
+  const old=document.querySelector('.toast');if(old)old.remove();
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2500);
+}
+
+// ── Guards ─────────────────────────────────────────────
+document.addEventListener('contextmenu',e=>{if(!isAdmin)e.preventDefault();});
+document.addEventListener('keydown',e=>{
+  if(!isAdmin){if(e.key==='F12'||(e.ctrlKey&&['u','U','s','S'].includes(e.key))||(e.ctrlKey&&e.shiftKey&&['i','I','j','J','c','C'].includes(e.key)))e.preventDefault();}
+  if(e.key==='Enter'){
+    const am=document.getElementById('authModal');
+    if(am.style.display==='flex'){
+      if(document.getElementById('viewLogin').style.display!=='none')doLogin();
+      else doRegister();
+    }
+  }
+  if(e.key==='Escape'){closeAuth();closeUserDropdown();}
+});
+
+// ── Restore session ────────────────────────────────────
+function restoreSession(){
+  const s=sessionStorage.getItem('uzlayn_session');
+  if(!s)return;
+  try{
+    const u=JSON.parse(s);
+    if(u&&u.login){
+      currentUser=u;
+      isAdmin=(u.role==='admin');
+      updateNavUser();
+      if(isAdmin){loadVideos();document.getElementById('adminPanel').classList.add('open');loadAds();renderAdminVideos();}
+      render();
+    }
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
+// FULLSCREEN TIKTOK-STYLE PLAYER
+// ══════════════════════════════════════════════════════
+let fsIndex = 0;
+let fsHls = null;
+let fsTouchStartY = 0;
+let fsTouchStartX = 0;
+let fsIsDragging = false;
+let fsDragDelta = 0;
+
+function openFs(startIndex) {
+  if (!videos.length) return;
+  fsIndex = startIndex;
+  document.getElementById('fsPlayer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  buildFsSlide(fsIndex);
+  updateFsNavBtns();
+  // Показать подсказку свайпа
+  const hint = document.createElement('div');
+  hint.className = 'fs-swipe-hint';
+  hint.textContent = '↑↓ Листай для следующего видео';
+  document.getElementById('fsPlayer').appendChild(hint);
+  setTimeout(() => hint.remove(), 3500);
+}
+
+function closeFs() {
+  document.getElementById('fsPlayer').classList.remove('open');
+  document.body.style.overflow = '';
+  stopFsVideo();
+  document.getElementById('fsSlides').innerHTML = '';
+}
+
+function buildFsSlide(idx) {
+  const v = videos[idx];
+  if (!v) return;
+  const slides = document.getElementById('fsSlides');
+  slides.innerHTML = '';
+
+  const slide = document.createElement('div');
+  slide.className = 'fs-slide';
+  slide.style.transform = 'translateY(0)';
+
+  const addedBy = v.addedBy || 'uzlayn';
+  const initials = addedBy.substring(0,2).toUpperCase();
+
+  slide.innerHTML = `
+    <div class="fs-top-grad"></div>
+    <div class="fs-bottom-grad"></div>
+
+    ${v.thumb ? `<div class="fs-thumb"><img src="${v.thumb}" /><div class="fs-thumb-overlay"></div></div>` : ''}
+
+    ${v.type === 'vk'
+      ? `<iframe src="${vkEmbedFs(v.url)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen"></iframe>`
+      : `<video id="fsVideo" controls controlsList="nodownload" oncontextmenu="return false" playsinline autoplay></video>`
+    }
+
+    <div class="fs-info">
+      <div class="fs-user">
+        <div class="fs-avatar">${initials}</div>
+        <div class="fs-username">@${addedBy}</div>
+      </div>
+      <div class="fs-title">${escH(v.title)}</div>
+      <div class="fs-date">${new Date(v.addedAt).toLocaleDateString('ru-RU')}</div>
+    </div>
+
+    <div class="fs-actions">
+      <div class="fs-action-btn" onclick="closeFs();openUploadOrRegister()">
+        <div class="fa-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <span>Добавить</span>
+      </div>
+      <div class="fs-action-btn" onclick="shareVideo(${idx})">
+        <div class="fa-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+        <span>Поделиться</span>
+      </div>
+      <div class="fs-action-btn" onclick="fsPrev()">
+        <div class="fa-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        </div>
+        <span>Назад</span>
+      </div>
+      <div class="fs-action-btn" onclick="fsNext()">
+        <div class="fa-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <span>Далее</span>
+      </div>
+    </div>
+  `;
+
+  slides.appendChild(slide);
+
+  // Запускаем видео
+  if (v.type !== 'vk') {
+    const vid = slide.querySelector('#fsVideo');
+    if (vid) {
+      if (v.thumb) { vid.style.position = 'absolute'; vid.style.inset = '0'; vid.style.zIndex = '1'; }
+      if (v.type === 'm3u8') {
+        if (Hls.isSupported()) {
+          fsHls = new Hls();
+          fsHls.loadSource(v.url);
+          fsHls.attachMedia(vid);
+          fsHls.on(Hls.Events.MANIFEST_PARSED, () => vid.play().catch(() => {}));
+        } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+          vid.src = v.url; vid.play().catch(() => {});
+        }
+      } else {
+        vid.src = v.url; vid.play().catch(() => {});
+      }
+    }
+  }
+
+  setupFsSwipe(slide);
+}
+
+function vkEmbedFs(url) {
+  const m = url.match(/video(-?\d+)_(\d+)/i);
+  return m ? `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1` : '';
+}
+
+function stopFsVideo() {
+  if (fsHls) { fsHls.destroy(); fsHls = null; }
+  const vid = document.getElementById('fsVideo');
+  if (vid) { vid.pause(); vid.src = ''; }
+}
+
+function fsNext() {
+  if (fsIndex >= videos.length - 1) { showToast('Это последнее видео'); return; }
+  animateSlide('up', () => { stopFsVideo(); fsIndex++; buildFsSlide(fsIndex); updateFsNavBtns(); });
+}
+
+function fsPrev() {
+  if (fsIndex <= 0) { showToast('Это первое видео'); return; }
+  animateSlide('down', () => { stopFsVideo(); fsIndex--; buildFsSlide(fsIndex); updateFsNavBtns(); });
+}
+
+function animateSlide(dir, cb) {
+  const slide = document.querySelector('.fs-slide');
+  if (!slide) { cb(); return; }
+  slide.style.transition = 'transform .3s ease';
+  slide.style.transform = dir === 'up' ? 'translateY(-100%)' : 'translateY(100%)';
+  setTimeout(cb, 280);
+}
+
+function updateFsNavBtns() {
+  const up = document.getElementById('fsNavUp');
+  const down = document.getElementById('fsNavDown');
+  if (up) up.style.opacity = fsIndex <= 0 ? '0.3' : '1';
+  if (down) down.style.opacity = fsIndex >= videos.length - 1 ? '0.3' : '1';
+}
+
+// Touch / swipe
+function setupFsSwipe(el) {
+  el.addEventListener('touchstart', e => {
+    fsTouchStartY = e.touches[0].clientY;
+    fsTouchStartX = e.touches[0].clientX;
+    fsIsDragging = true;
+    fsDragDelta = 0;
+  }, { passive: true });
+
+  el.addEventListener('touchmove', e => {
+    if (!fsIsDragging) return;
+    const dy = e.touches[0].clientY - fsTouchStartY;
+    const dx = e.touches[0].clientX - fsTouchStartX;
+    if (Math.abs(dx) > Math.abs(dy)) return; // горизонтальный свайп игнорируем
+    fsDragDelta = dy;
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${dy * 0.4}px)`;
+  }, { passive: true });
+
+  el.addEventListener('touchend', () => {
+    fsIsDragging = false;
+    el.style.transition = 'transform .3s ease';
+    el.style.transform = 'translateY(0)';
+    if (fsDragDelta < -60) fsNext();
+    else if (fsDragDelta > 60) fsPrev();
+    fsDragDelta = 0;
+  });
+}
+
+// Share
+function shareVideo(idx) {
+  const v = videos[idx];
+  if (!v) return;
+  if (navigator.share) {
+    navigator.share({ title: v.title, text: v.title, url: location.href });
+  } else {
+    navigator.clipboard.writeText(location.href).then(() => showToast('🔗 Ссылка скопирована!'));
+  }
+}
+
+// ── Upload modal ───────────────────────────────────────
+function openUploadOrRegister(){
+  const modal = document.getElementById('uploadModal');
+  modal.style.display = 'flex';
+  if(currentUser){
+    document.getElementById('uploadPromo').style.display = 'none';
+    document.getElementById('uploadForm').style.display = 'block';
+  } else {
+    document.getElementById('uploadPromo').style.display = 'block';
+    document.getElementById('uploadForm').style.display = 'none';
+  }
+}
+function closeUpload(){
+  document.getElementById('uploadModal').style.display = 'none';
+}
+function closeUploadOnBg(e){
+  if(e.target===document.getElementById('uploadModal')) closeUpload();
+}
+
+function submitUserVideo(){
+  const title = document.getElementById('uTitle').value.trim();
+  const type  = document.getElementById('uType').value;
+  const url   = document.getElementById('uUrl').value.trim();
+  const thumb = document.getElementById('uThumb').value.trim();
+  const errEl = document.getElementById('uploadErr');
+
+  if(!title){ showModalErr(errEl,'Введи название'); return; }
+  if(!url){ showModalErr(errEl,'Введи ссылку на видео'); return; }
+
+  // Добавляем видео (пользователи тоже могут добавлять)
+  videos.unshift({
+    id: nextId++,
+    title,
+    type,
+    url,
+    thumb,
+    addedAt: Date.now(),
+    addedBy: currentUser.login
+  });
+  saveVideos();
+  render();
+  if(isAdmin) renderAdminVideos();
+  closeUpload();
+  document.getElementById('uTitle').value = '';
+  document.getElementById('uUrl').value = '';
+  document.getElementById('uThumb').value = '';
+  errEl.classList.remove('show');
+  showToast('🎬 Видео опубликовано!');
+}
+
+// ── Update nav upload icon ─────────────────────────────
+function updateUploadIcon(){
+  const btn = document.getElementById('uploadIconBtn');
+  if(currentUser){
+    btn.style.borderColor = '#5b8cff';
+    btn.style.color = '#5b8cff';
+  } else {
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
+}
+
+// ── PWA ────────────────────────────────────────────────
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Показываем баннер через 3 сек если не скрыт
+  if(!sessionStorage.getItem('pwa_dismissed')){
+    setTimeout(() => {
+      document.getElementById('pwaBanner').style.display = 'flex';
+    }, 3000);
+  }
+});
+
+function installPwa(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r => {
+      if(r.outcome === 'accepted') showToast('✅ Приложение установлено!');
+      deferredPrompt = null;
+      document.getElementById('pwaBanner').style.display = 'none';
+    });
+  }
+}
+
+function dismissPwa(){
+  document.getElementById('pwaBanner').style.display = 'none';
+  sessionStorage.setItem('pwa_dismissed','1');
+}
+
+// Service Worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(() => {});
+  });
+}
+
+// ── Сброс пароля ───────────────────────────────────────
+if(location.search.includes('resetadmin')){
+  localStorage.removeItem('uzlayn_ph');
+  passHash = null;
+  alert('Пароль сброшен! Войди с логином admin и новым паролем.');
+  history.replaceState(null,'',location.pathname);
+}
+
+// ── Init ───────────────────────────────────────────────
+restoreSession();
+if(!currentUser){loadVideos();render();}
+</script>
+</body>
+</html>
