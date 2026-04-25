@@ -630,7 +630,13 @@ function render(){
 }
 
 // ── Fullscreen player ──────────────────────────────────
-function vkEmb(url){var m=url.match(/video(-?\d+)_(\d+)/i);return m?'https://vk.com/video_ext.php?oid='+m[1]+'&id='+m[2]+'&hd=2&autoplay=1':'';}
+function vkEmb(url){
+  // VK Клипы: clip-XXX_XXX
+  var c=url.match(/clip(-?\d+)_(\d+)/i);
+  if(c)return 'https://vk.com/video_ext.php?oid='+c[1]+'&id='+c[2]+'&hd=2&autoplay=1';
+  // VK Видео: video-XXX_XXX
+  var m=url.match(/video(-?\d+)_(\d+)/i);
+  return m?'https://vk.com/video_ext.php?oid='+m[1]+'&id='+m[2]+'&hd=2&autoplay=1':'';}
 
 function openFs(idx){
   if(!videos.length)return;
