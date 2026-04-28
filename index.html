@@ -21,12 +21,12 @@
 var db, auth;
 try {
   firebase.initializeApp({
-    apiKey: "AIzaSyBeCYzHotfS_ltSMHsgTW9NbfAMT6F_bTA",
-    authDomain: "uzlayn-tv.firebaseapp.com",
-    projectId: "uzlayn-tv",
-    storageBucket: "uzlayn-tv.firebasestorage.app",
-    messagingSenderId: "11357632370",
-    appId: "1:11357632370:web:37989436a7256e24e70feb"
+    apiKey: "AIzaSyDqeLo0veeD_3dlEKi4UViGSrpr9B2wn-c",
+    authDomain: "uzing-b42ab.firebaseapp.com",
+    projectId: "uzing-b42ab",
+    storageBucket: "uzing-b42ab.firebasestorage.app",
+    messagingSenderId: "1053006771336",
+    appId: "1:1053006771336:web:887b36d80a4474a2559b3d"
   });
   db = firebase.firestore();
   auth = firebase.auth();
@@ -119,67 +119,52 @@ nav{background:rgba(9,9,15,.97);border-bottom:1px solid #18182a;padding:0 14px;h
 .ct2{font-size:11px;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .cd{font-size:10px;color:#303050;margin-top:3px}
 
-/* ═══ FULLSCREEN PLAYER (VK Style) ═══ */
-#fsWrap{position:fixed;inset:0;background:#0a0a0a;z-index:600;display:none;flex-direction:column}
+/* ═══ FULLSCREEN PLAYER ═══ */
+#fsWrap{position:fixed;inset:0;background:#000;z-index:600;display:none;flex-direction:column}
 #fsWrap.on{display:flex}
-#fsSlide{flex:1;display:flex;flex-direction:column;overflow:hidden;touch-action:none}
+#fsSlide{flex:1;position:relative;overflow:hidden;background:#000;touch-action:none}
+.fs-bg{position:absolute;inset:0;z-index:0}
+.fs-bg img{width:100%;height:100%;object-fit:cover;filter:blur(20px) brightness(.4)}
+.fs-grad-top{position:absolute;top:0;left:0;right:0;height:100px;background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);z-index:2;pointer-events:none}
+.fs-grad-bot{position:absolute;bottom:0;left:0;right:0;height:240px;background:linear-gradient(to top,rgba(0,0,0,.92),transparent);z-index:2;pointer-events:none}
 
-/* Video area */
-.fs-video-area{position:relative;flex:1;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:0}
-.fs-video-area video{width:100%;height:100%;object-fit:contain;display:block}
-.fs-video-area iframe{width:100%;height:100%;border:none;display:block}
+/* ── Top bar: только кнопка назад ── */
+.fs-topbar{position:absolute;top:0;left:0;right:0;padding:12px 14px;display:flex;align-items:center;z-index:10}
+.fs-back{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fs-back svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 
-/* Top bar — автор по центру, назад слева, скачать+меню справа */
-.fs-topbar{position:absolute;top:0;left:0;right:0;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;z-index:10;background:linear-gradient(to bottom,rgba(0,0,0,.5),transparent)}
-.fs-back{background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px 4px 0;display:flex;align-items:center}
-.fs-back svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.fs-top-center{display:flex;flex-direction:column;align-items:center;flex:1}
-.fs-top-author{font-size:14px;font-weight:700;color:#fff}
-.fs-top-date{font-size:11px;color:rgba(255,255,255,.6);margin-top:1px}
-.fs-top-right{display:flex;align-items:center;gap:2px}
-.fs-top-btn{background:none;border:none;color:#fff;cursor:pointer;padding:5px;display:flex;align-items:center}
-.fs-top-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* ── Bottom info (только снизу) ── */
+.fs-info{position:absolute;bottom:110px;left:0;right:62px;padding:0 14px;z-index:5;pointer-events:none}
+.fs-by{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.fs-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b8cff,#a259ff);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;border:2px solid rgba(255,255,255,.25)}
+.fs-uname{font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.fs-title{font-size:14px;font-weight:700;color:#fff;line-height:1.4;text-shadow:0 1px 6px rgba(0,0,0,.7)}
+.fs-date{font-size:11px;color:rgba(255,255,255,.45);margin-top:3px}
 
-/* Center play/seek buttons overlay */
-.fs-center-btns{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);display:flex;align-items:center;justify-content:center;gap:40px;z-index:5;pointer-events:none}
-.fs-center-btns.visible{pointer-events:auto}
-.fc-btn{background:none;border:none;color:#fff;cursor:pointer;padding:8px;display:flex;align-items:center;justify-content:center;transition:opacity .15s}
-.fc-btn svg{fill:#fff;stroke:none}
-.fc-play{width:54px;height:54px;border-radius:50%;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center}
-.fc-play svg{width:26px;height:26px}
-.fc-seek svg{width:28px;height:28px;opacity:.9}
+/* ── Controls bar ── */
+.fs-controls{position:absolute;bottom:0;left:0;right:58px;padding:0 14px 20px;z-index:6}
+.fs-prog-wrap{padding:8px 0;cursor:pointer;touch-action:none}
+.fs-prog-bg{height:4px;background:rgba(255,255,255,.2);border-radius:2px;position:relative}
+.fs-prog-fill{height:100%;background:linear-gradient(90deg,#5b8cff,#a259ff);border-radius:2px;position:absolute;top:0;left:0;transition:width .15s}
+.fs-prog-dot{width:13px;height:13px;background:#fff;border-radius:50%;position:absolute;top:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.4);transition:left .15s}
+.fs-btns-row{display:flex;align-items:center;justify-content:space-between;margin-top:5px}
+.fs-btn-l{display:flex;align-items:center;gap:4px}
+.fs-btn-r{display:flex;align-items:center;gap:4px}
+.fb{width:38px;height:38px;background:none;border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .15s}
+.fb:hover{background:rgba(255,255,255,.1)}
+.fb svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fs-time{font-size:11px;color:rgba(255,255,255,.7);font-weight:500;white-space:nowrap;margin-left:2px}
 
-/* Controls panel — тёмный блок снизу */
-.fs-panel{background:#111;padding:14px 16px 24px;flex-shrink:0}
+/* ── Side buttons ── */
+.fs-side{position:absolute;right:0;bottom:20px;padding:0 9px;display:flex;flex-direction:column;align-items:center;gap:16px;z-index:10}
+.fsb{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.fsb .c{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;transition:background .2s}
+.fsb:hover .c{background:rgba(255,255,255,.25)}
+.fsb svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fsb span{font-size:9px;color:rgba(255,255,255,.6)}
 
-/* Title + repeat */
-.fs-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
-.fs-title{font-size:15px;font-weight:700;color:#fff;line-height:1.4;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.fs-rep{background:none;border:none;cursor:pointer;padding:2px;flex-shrink:0;opacity:.7;color:#fff}
-.fs-rep svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.fs-rep.on{opacity:1;color:#4da6ff}
-.fs-rep.on svg{stroke:#4da6ff}
-
-/* Time */
-.fs-times{display:flex;justify-content:space-between;margin-bottom:5px}
-.fs-t{font-size:12px;color:rgba(255,255,255,.7);font-weight:500}
-
-/* Progress bar */
-.fs-prog{position:relative;height:20px;display:flex;align-items:center;cursor:pointer;margin-bottom:8px}
-.fs-prog-bg{position:absolute;left:0;right:0;height:3px;background:rgba(255,255,255,.2);border-radius:2px}
-.fs-prog-fill{position:absolute;left:0;height:3px;background:#4da6ff;border-radius:2px;width:0%}
-.fs-prog-dot{position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.6);left:0%}
-
-/* Bottom row — звук слева, поделиться справа */
-.fs-bot-row{display:flex;align-items:center;justify-content:space-between}
-.fs-vol-btn{background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;font-size:13px;opacity:.85}
-.fs-vol-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.fs-share-btn{background:none;border:none;color:#fff;cursor:pointer;padding:4px;display:flex;align-items:center;opacity:.85}
-.fs-share-btn svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-
-.fs-side{display:none}
-.fsb{display:none}
-.swipe-hint{position:absolute;top:45%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.55);color:rgba(255,255,255,.6);font-size:11px;padding:5px 13px;border-radius:18px;z-index:4;pointer-events:none;white-space:nowrap;animation:fo 3.5s forwards}
+/* ── Swipe hint ── */
+.swipe-hint{position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);color:rgba(255,255,255,.6);font-size:11px;padding:5px 13px;border-radius:18px;z-index:4;pointer-events:none;white-space:nowrap;animation:fo 3.5s forwards}
 @keyframes fo{0%{opacity:1}70%{opacity:1}100%{opacity:0}}
 
 /* ═══ DROPDOWN ═══ */
@@ -337,7 +322,7 @@ nav{background:rgba(9,9,15,.97);border-bottom:1px solid #18182a;padding:0 14px;h
       <div class="mh">👋 Войти</div>
       <div class="msub">Войди в свой аккаунт</div>
       <div class="merr" id="loginErr"></div>
-      <input class="mi" type="text" id="lUser" placeholder="Логин или email (например uzlayn@gmail.com)"/>
+      <input class="mi" type="text" id="lUser" placeholder="Логин (без @)"/>
       <input class="mi" type="password" id="lPass" placeholder="Пароль"/>
       <div class="mbtn-row">
         <button class="mb-cancel" onclick="closeAuth()">Закрыть</button>
@@ -421,7 +406,7 @@ nav{background:rgba(9,9,15,.97);border-bottom:1px solid #18182a;padding:0 14px;h
 // ══════════════════════════════════════════════════════
 // CONFIG — измени email на свой!
 // ══════════════════════════════════════════════════════
-var ADMIN_EMAIL = 'uzlayn@gmail.com';
+var ADMIN_EMAIL = 'uzlayn.admin@gmail.com';
 
 // ── State ──────────────────────────────────────────────
 var videos=[], activeId=null, nextId=Date.now();
@@ -506,7 +491,7 @@ function doLogin(){
   clearErr('loginErr');
   if(!login||!pass){showErr(document.getElementById('loginErr'),'Заполни все поля');return;}
   if(!auth){showErr(document.getElementById('loginErr'),'Нет соединения');return;}
-  var email = login.includes('@') ? login : login + '@uzlayn.tv';
+  var email=login.includes('@')?login:login+'@uzlayn.tv';
   auth.signInWithEmailAndPassword(email,pass)
     .then(function(){closeAuth();})
     .catch(function(e){
@@ -638,15 +623,13 @@ function vkEmb(url){
   return m?'https://vk.com/video_ext.php?oid='+m[1]+'&id='+m[2]+'&hd=2&autoplay=1':'';
 }
 function yadiskUrl(url){
-  // Яндекс Диск — используем прямой API
-  // Формат: https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=URL
-  // Но из браузера это не работает из-за CORS
-  // Поэтому показываем видео через встроенный iframe Яндекса
-  return url; // возвращаем как есть, тип меняем на yadisk
+  // Конвертируем ссылку Яндекс Диска в прямую
+  var key=url.replace(/.*disk\.yandex\.(ru|com)(\/d\/|\/i\/|\/public\/#\/)?/,'');
+  return 'https://getfile.dokpub.com/yandex/get/'+url;
 }
 function resolveUrl(type,url){
   if(type==='vk')return {type:'vk',url:url};
-  if(type==='yadisk')return {type:'yadisk',url:url};
+  if(type==='yadisk')return {type:'mp4',url:yadiskUrl(url)};
   return {type:type,url:url};
 }
 
@@ -708,7 +691,7 @@ function renderAdmin(){
     +'<div class="f"><label>Название</label><input type="text" id="et_'+v.id+'" value="'+escH(v.title)+'"/></div>'
     +'<div class="f"><label>Тип</label><select id="ety_'+v.id+'"><option value="mp4"'+(v.type==='mp4'?' selected':'')+'>MP4</option><option value="m3u8"'+(v.type==='m3u8'?' selected':'')+'>M3U8</option><option value="vk"'+(v.type==='vk'?' selected':'')+'>VK</option><option value="yadisk"'+(v.type==='yadisk'?' selected':'')+'>Яндекс Диск</option></select></div>'
     +'<div class="f"><label>Ссылка</label><input type="text" id="eu_'+v.id+'" value="'+escH(v.url)+'"/></div>'
-    +'<div class="f"><label>Превью</label><input type="text" id="eth_'+v.id+'" value="'+escH(v.thumb||'')+'"/></div>'
+    +'<div class="f"><label>Превью</label><input type="text" id="eth_'+v.id+'" value="'+escH(v.thumb||')+'"/></div>'
     +'<div style="display:flex;gap:7px">'
     +'<button class="btn btn-p" style="flex:1" onclick="saveEdit('+v.id+')">💾 Сохранить</button>'
     +'<button class="btn btn-g" style="flex:1" onclick="toggleEdit('+v.id+')">Отмена</button>'
@@ -788,124 +771,84 @@ function buildFs(idx){
   var slide=document.getElementById('fsSlide');
   slide.innerHTML='';
   var by=v.addedBy||'uzlayn';
-  var date=new Date(v.addedAt).toLocaleDateString('ru-RU',{day:'numeric',month:'short'});
-  var isVk=(v.type==='vk');
+  var ini=by.substring(0,2).toUpperCase();
 
-  // ── Video area ──────────────────────────────────────
-  var videoArea='<div class="fs-video-area" id="fsVideoArea">';
+  var html='';
+  // Background blur
+  if(v.thumb)html+='<div class="fs-bg"><img src="'+escH(v.thumb)+'"/></div>';
+  html+='<div class="fs-grad-top"></div><div class="fs-grad-bot"></div>';
 
-  // Top bar — назад | автор+дата | скачать+меню
-  videoArea+='<div class="fs-topbar">'
+  // Video or iframe
+  if(v.type==='vk'){
+    var emb=vkEmb(v.url);
+    html+='<iframe src="'+emb+'" allowfullscreen allow="autoplay;encrypted-media;fullscreen" style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1"></iframe>';
+  } else {
+    html+='<video id="fsVid" playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1;background:#000" onclick="togglePlay()"></video>';
+  }
+
+  // TOP BAR — только кнопка назад, без названия!
+  html+='<div class="fs-topbar">'
     +'<button class="fs-back" onclick="closeFs()"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>'
-    +'<div class="fs-top-center"><div class="fs-top-author">'+escH(by)+'</div><div class="fs-top-date">'+date+'</div></div>'
-    +'<div class="fs-top-right">'
-    +'<button class="fs-top-btn"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>'
-    +'<button class="fs-top-btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="white"/><circle cx="12" cy="12" r="1.5" fill="white"/><circle cx="12" cy="19" r="1.5" fill="white"/></svg></button>'
-    +'</div>'
     +'</div>';
 
-  if(isVk){
-    var emb=vkEmb(v.url);
-    videoArea+='<iframe src="'+emb+'" allowfullscreen allow="autoplay;encrypted-media;fullscreen"></iframe>';
-  } else {
-    videoArea+='<video id="fsVid" playsinline></video>';
-    // Center buttons: seek back | play | seek forward
-    videoArea+='<div class="fs-center-btns visible" id="fsCenterBtns">'
-      +'<button class="fc-btn fc-seek" onclick="seekBack()"><svg viewBox="0 0 36 36" width="36" height="36"><path d="M18 6C11.4 6 6 11.4 6 18s5.4 12 12 12 12-5.4 12-12" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/><polyline points="18,3 14,7 18,11" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="18" y="21" text-anchor="middle" fill="white" font-size="8" font-weight="bold">10</text></svg></button>'
-      +'<button class="fc-btn" onclick="togglePlay()"><div class="fc-play"><svg id="fpIco" viewBox="0 0 24 24" width="26" height="26"><polygon points="5,3 19,12 5,21" fill="white"/></svg></div></button>'
-      +'<button class="fc-btn fc-seek" onclick="seekFwd()"><svg viewBox="0 0 36 36" width="36" height="36"><path d="M18 6C24.6 6 30 11.4 30 18s-5.4 12-12 12S6 24.6 6 18" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/><polyline points="18,3 22,7 18,11" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="18" y="21" text-anchor="middle" fill="white" font-size="8" font-weight="bold">10</text></svg></button>'
+  // BOTTOM INFO — название и автор только снизу
+  html+='<div class="fs-info">'
+    +'<div class="fs-by"><div class="fs-av">'+ini+'</div><div class="fs-uname">@'+escH(by)+'</div></div>'
+    +'<div class="fs-title">'+escH(v.title)+'</div>'
+    +'<div class="fs-date">'+new Date(v.addedAt).toLocaleDateString('ru-RU')+'</div>'
+    +'</div>';
+
+  // CONTROLS (только для не-VK)
+  if(v.type!=='vk'){
+    html+='<div class="fs-controls">'
+      +'<div class="fs-prog-wrap" id="fpWrap">'
+      +'<div class="fs-prog-bg"><div class="fs-prog-fill" id="fpFill" style="width:0%"></div><div class="fs-prog-dot" id="fpDot" style="left:0%"></div></div>'
+      +'</div>'
+      +'<div class="fs-btns-row">'
+      +'<div class="fs-btn-l">'
+      +'<button class="fb" id="fbPlay" onclick="togglePlay()"><svg id="fpIco" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21" fill="white" stroke="none"/></svg></button>'
+      +'<button class="fb" onclick="toggleMute()"><svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path id="fpVol" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>'
+      +'<span class="fs-time" id="fpTime">0:00 / 0:00</span>'
+      +'</div>'
+      +'<div class="fs-btn-r">'
+      +'<button class="fb" onclick="reqFullscreen()"><svg viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg></button>'
+      +'</div>'
+      +'</div>'
       +'</div>';
   }
 
-  videoArea+='</div>';
+  // SIDE BUTTONS
+  html+='<div class="fs-side">'
+    +'<div class="fsb" onclick="fsPrev()"><div class="c"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></div><span>Назад</span></div>'
+    +'<div class="fsb" onclick="fsNext()"><div class="c"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><span>Далее</span></div>'
+    +'<div class="fsb" onclick="fsShare()"><div class="c"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><span>Поделиться</span></div>'
+    +'<div class="fsb" onclick="closeFs();openUpload()"><div class="c"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><span>Добавить</span></div>'
+    +'</div>';
 
-  // ── Controls panel ──────────────────────────────────
-  var panel='';
-  if(!isVk){
-    panel='<div class="fs-panel">'
-      // Title + repeat
-      +'<div class="fs-title-row">'
-      +'<div class="fs-title">'+escH(v.title)+'</div>'
-      +'<button class="fs-rep" id="fsRepBtn" onclick="toggleRepeat()"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></button>'
-      +'</div>'
-      // Times
-      +'<div class="fs-times"><span class="fs-t" id="fpCur">0:00</span><span class="fs-t" id="fpDur">0:00</span></div>'
-      // Progress bar
-      +'<div class="fs-prog" id="fpProg">'
-      +'<div class="fs-prog-bg"></div>'
-      +'<div class="fs-prog-fill" id="fpFill" style="width:0%"></div>'
-      +'<div class="fs-prog-dot" id="fpDot" style="left:0%"></div>'
-      +'</div>'
-      // Bottom row
-      +'<div class="fs-bot-row">'
-      +'<button class="fs-vol-btn" onclick="toggleMute()" id="fsVolBtn"><svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path id="fpVol" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>'
-      +'<button class="fs-share-btn" onclick="fsShare()"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>'
-      +'</div>'
-      +'</div>';
-  } else {
-    panel='<div class="fs-panel">'
-      +'<div class="fs-title-row"><div class="fs-title">'+escH(v.title)+'</div></div>'
-      +'</div>';
-  }
-
-  slide.innerHTML=videoArea+panel;
+  slide.innerHTML=html;
 
   // Init video
-  if(v.type==='yadisk'){
-    // Яндекс Диск — встраиваем через iframe
-    var yFrame=document.createElement('iframe');
-    yFrame.src='https://disk.yandex.ru/i/'+v.url.split('/i/')[1];
-    yFrame.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:none;z-index:1';
-    yFrame.allowFullscreen=true;
-    slide.appendChild(yFrame);
-  } else if(v.type!=='vk'){
+  if(v.type!=='vk'){
     var vid=document.getElementById('fsVid');
     if(vid){
-      // Сначала останавливаем предыдущее
-      vid.pause();
-      vid.removeAttribute('src');
-      vid.load();
-
       if(v.type==='m3u8'||v.url.includes('.m3u8')){
         if(Hls.isSupported()){
-          hlsInst=new Hls({enableWorker:true,lowLatencyMode:true});
-          hlsInst.loadSource(v.url);
-          hlsInst.attachMedia(vid);
-          hlsInst.on(Hls.Events.MANIFEST_PARSED,function(){
-            vid.play().catch(function(){});
-            setPlayIco(true);
-          });
-          hlsInst.on(Hls.Events.ERROR,function(e,d){
-            if(d.fatal)toast('❌ Ошибка загрузки видео');
-          });
+          hlsInst=new Hls();hlsInst.loadSource(v.url);hlsInst.attachMedia(vid);
+          hlsInst.on(Hls.Events.MANIFEST_PARSED,function(){vid.play().catch(function(){});setPlayIco(true);});
         } else if(vid.canPlayType('application/vnd.apple.mpegurl')){
-          vid.src=v.url;
-          vid.play().catch(function(){});
+          vid.src=v.url;vid.play().catch(function(){});
         }
       } else {
         vid.src=v.url;
-        vid.load();
-        vid.play().catch(function(){});
+        vid.addEventListener('canplay',function(){vid.play().catch(function(){});},{once:true});
       }
-
       vid.addEventListener('play',function(){setPlayIco(true);});
       vid.addEventListener('pause',function(){setPlayIco(false);});
-      vid.addEventListener('ended',function(){
-        setPlayIco(false);
-        if(isRepeat){vid.currentTime=0;vid.play();setPlayIco(true);}
-        else if(fsIdx<videos.length-1)setTimeout(fsNext,1200);
-      });
-
-      progressTimer=setInterval(function(){updateProgress(vid);},300);
-
+      vid.addEventListener('ended',function(){setPlayIco(false);if(fsIdx<videos.length-1)setTimeout(fsNext,1200);});
+      progressTimer=setInterval(function(){updateProgress(vid);},250);
+      // Progress bar click
       var pw=document.getElementById('fpWrap');
-      if(pw){
-        pw.addEventListener('click',function(e){
-          if(!vid.duration)return;
-          var r=pw.getBoundingClientRect();
-          vid.currentTime=((e.clientX-r.left)/r.width)*vid.duration;
-        });
-      }
+      if(pw){pw.addEventListener('click',function(e){if(!vid.duration)return;var r=pw.getBoundingClientRect();vid.currentTime=((e.clientX-r.left)/r.width)*vid.duration;});}
     }
   }
   setupSwipe(slide);
@@ -913,57 +856,25 @@ function buildFs(idx){
 
 function setPlayIco(playing){
   var ico=document.getElementById('fpIco');if(!ico)return;
-  var bp=document.getElementById('fsBigPlay');
-  if(playing){
-    ico.innerHTML='<rect x="6" y="4" width="4" height="16" fill="white"/><rect x="14" y="4" width="4" height="16" fill="white"/>';
-    if(bp)bp.style.opacity='0';
-  } else {
-    ico.innerHTML='<polygon points="5,3 19,12 5,21" fill="white" stroke="none"/>';
-    if(bp)bp.style.opacity='1';
-  }
+  if(playing)ico.innerHTML='<rect x="6" y="4" width="4" height="16" fill="white"/><rect x="14" y="4" width="4" height="16" fill="white"/>';
+  else ico.innerHTML='<polygon points="5,3 19,12 5,21" fill="white" stroke="none"/>';
 }
 
 function updateProgress(vid){
   if(!vid||!vid.duration)return;
   var p=(vid.currentTime/vid.duration)*100;
-  var f=document.getElementById('fpFill');
-  var d=document.getElementById('fpDot');
-  var c=document.getElementById('fpCur');
-  var du=document.getElementById('fpDur');
+  var f=document.getElementById('fpFill');var d=document.getElementById('fpDot');var t=document.getElementById('fpTime');
   if(f)f.style.width=p+'%';
   if(d)d.style.left=p+'%';
-  if(c)c.textContent=ft(vid.currentTime);
-  if(du)du.textContent=ft(vid.duration);
+  if(t)t.textContent=ft(vid.currentTime)+' / '+ft(vid.duration);
 }
 function ft(s){if(isNaN(s))return'0:00';var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
 
-function togglePlay(){
-  var v=document.getElementById('fsVid');if(!v)return;
-  if(v.paused){v.play();setPlayIco(true);}else{v.pause();setPlayIco(false);}
-}
+function togglePlay(){var v=document.getElementById('fsVid');if(!v)return;if(v.paused)v.play();else v.pause();}
 function toggleMute(){
   var v=document.getElementById('fsVid');if(!v)return;
   isMuted=!isMuted;v.muted=isMuted;
-  var vp=document.getElementById('fpVol');
-  if(vp)vp.style.opacity=isMuted?'0.3':'1';
-}
-function replayFs(){
-  var v=document.getElementById('fsVid');
-  if(v){v.currentTime=0;v.play();setPlayIco(true);}
-}
-function seekBack(){
-  var v=document.getElementById('fsVid');
-  if(v)v.currentTime=Math.max(0,v.currentTime-10);
-}
-function seekFwd(){
-  var v=document.getElementById('fsVid');
-  if(v)v.currentTime=Math.min(v.duration||0,v.currentTime+10);
-}
-var isRepeat=false;
-function toggleRepeat(){
-  isRepeat=!isRepeat;
-  var btn=document.getElementById('fsRepBtn');
-  if(btn){if(isRepeat)btn.classList.add('on');else btn.classList.remove('on');}
+  var vp=document.getElementById('fpVol');if(vp)vp.style.display=isMuted?'none':'block';
 }
 function reqFullscreen(){
   var w=document.getElementById('fsWrap');
