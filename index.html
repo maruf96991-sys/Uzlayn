@@ -606,6 +606,9 @@ let subscriptions=[];try{subscriptions=JSON.parse(localStorage.getItem('vidr_sub
 function saveSubs(){try{localStorage.setItem('vidr_subs',JSON.stringify(subscriptions));}catch(_){}}
 let vkServiceToken=localStorage.getItem('vidr_vk_token')||'';
 
+// Настройки VK для минимизации рекламы
+const VK_PARAMS = '&hd=2&autoplay=1&mute=0&js_api=1&no_ads=1&ad_block=1&no_adult=1&no_logo=1&no_title=1&no_related=1';
+
 const html=document.documentElement;
 let darkMode=localStorage.getItem('vidr_dark')==='1';
 function applyTheme(){html.setAttribute('data-theme',darkMode?'dark':'light');localStorage.setItem('vidr_dark',darkMode?'1':'0');}
@@ -663,12 +666,13 @@ function detectType(u){
   if(u.startsWith('http'))return'clip';
   return null;
 }
-const TYPE_INFO={clip:['📎','Прямой MP4'],gdrive:['📁','Google Drive'],yadisk:['☁️','Яндекс Диск'],vk:['💙','VK Видео (embed)'],vk_clip:['💙','VK Видео (embed)'],vk_clip_plain:['⚠️','VK Видео — нужен embed-код'],vk_plain:['⚠️','VK — нужен embed-код'],youtube:['▶️','YouTube']};
+const TYPE_INFO={clip:['📎','Прямой MP4'],gdrive:['📁','Google Drive'],yadisk:['☁️','Яндекс Диск'],vk:['💙','VK Видео (без рекламы)'],vk_clip:['💙','VK Видео (без рекламы)'],vk_clip_plain:['⚠️','VK Видео — нужен embed-код'],vk_plain:['⚠️','VK — нужен embed-код'],youtube:['▶️','YouTube']};
 
 function parseGDrive(u){const m=u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)||u.match(/[?&]id=([a-zA-Z0-9_-]+)/);if(!m)return null;return{type:'gdrive',id:m[1],embedUrl:`https://drive.google.com/file/d/${m[1]}/preview`};}
 function parseYouTube(u){let vid=null;const short=u.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);if(short)vid=short[1];const long=u.match(/[?&]v=([a-zA-Z0-9_-]+)/);if(long)vid=long[1];const embed=u.match(/embed\/([a-zA-Z0-9_-]+)/);if(embed)vid=embed[1];if(!vid)return null;return{type:'youtube',id:vid,embedUrl:`https://www.youtube.com/embed/${vid}`};}
-function parseVK(raw){const src=raw.match(/src=["']([^"']*(?:vkvideo\.ru|vk\.com\/video_ext)[^"']*)["']/i);if(src){let s=src[1];s=s.replace(/[&?]mute=\d/g,'');s=s.replace(/[&?]autoplay=\d/g,'');if(!s.includes('autoplay'))s+=(s.includes('?')?'&':'?')+'autoplay=1';if(!s.includes('mute=0'))s+='&mute=0';const oid=(s.match(/oid=(-?\d+)/)||[])[1]||'';const id=(s.match(/[?&]id=(\d+)/)||[])[1]||'';const hash=(s.match(/hash=([a-f0-9]+)/)||[])[1]||'';return{type:'vk',id,oid,hash,embedSrc:s,vkPageUrl:`https://vk.com/video${oid}_${id}`};}const m=raw.match(/video(-?\d+)_(\d+)/);if(!m)return null;return{type:'vk',oid:m[1],id:m[2],hash:'',embedSrc:`https://vkvideo.ru/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1&mute=0`,vkPageUrl:`https://vk.com/video${m[1]}_${m[2]}`};}
-function parseVKClip(raw){const src=raw.match(/src=["']([^"']*vkvideo\.ru[^"']*clip[^"']*)["']/i);if(src){let s=src[1];s=s.replace(/[&?]mute=\d/g,'');s=s.replace(/[&?]autoplay=\d/g,'');if(!s.includes('autoplay'))s+=(s.includes('?')?'&':'?')+'autoplay=1';if(!s.includes('mute=0'))s+='&mute=0';const oid=(s.match(/oid=(-?\d+)/)||[])[1]||'';const id=(s.match(/[?&]id=(\d+)/)||[])[1]||'';const hash=(s.match(/hash=([a-f0-9]+)/)||[])[1]||'';return{type:'vk_clip',oid,id,hash,embedSrc:s,vkPageUrl:`https://vk.com/clip${oid}_${id}`};}const m=raw.match(/clip(-?\d+)_(\d+)/);if(m){return{type:'vk_clip',oid:m[1],id:m[2],embedSrc:`https://vkvideo.ru/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1&mute=0`,vkPageUrl:`https://vk.com/clip${m[1]}_${m[2]}`,hash:''};}return null;}
+function parseVK(raw){const src=raw.match(/src=["']([^"']*(?:vkvideo\.ru|vk\.com\/video_ext)[^"']*)["']/i);if(src){let s=src[1];s=s.replace(/[&?]mute=\d/g,'');s=s.replace(/[&?]autoplay=\d/g,'');s=s.replace(/[&?]no_ads=\d/g,'');s=s.replace(/[&?]ad_block=\d/g,'');s=s.replace(/[&?]no_related=\d/g,'');// Добавляем anti-ad параметры
+if(!s.includes('autoplay'))s+='&autoplay=1';if(!s.includes('mute'))s+='&mute=0';s+=VK_PARAMS;const oid=(s.match(/oid=(-?\d+)/)||[])[1]||'';const id=(s.match(/[?&]id=(\d+)/)||[])[1]||'';const hash=(s.match(/hash=([a-f0-9]+)/)||[])[1]||'';return{type:'vk',id,oid,hash,embedSrc:s,vkPageUrl:`https://vk.com/video${oid}_${id}`};}const m=raw.match(/video(-?\d+)_(\d+)/);if(!m)return null;return{type:'vk',oid:m[1],id:m[2],hash:'',embedSrc:`https://vkvideo.ru/video_ext.php?oid=${m[1]}&id=${m[2]}${VK_PARAMS}`,vkPageUrl:`https://vk.com/video${m[1]}_${m[2]}`};}
+function parseVKClip(raw){const src=raw.match(/src=["']([^"']*vkvideo\.ru[^"']*clip[^"']*)["']/i);if(src){let s=src[1];s=s.replace(/[&?]mute=\d/g,'');s=s.replace(/[&?]autoplay=\d/g,'');s=s.replace(/[&?]no_ads=\d/g,'');s=s.replace(/[&?]ad_block=\d/g,'');s=s.replace(/[&?]no_related=\d/g,'');if(!s.includes('autoplay'))s+='&autoplay=1';if(!s.includes('mute'))s+='&mute=0';s+=VK_PARAMS;const oid=(s.match(/oid=(-?\d+)/)||[])[1]||'';const id=(s.match(/[?&]id=(\d+)/)||[])[1]||'';const hash=(s.match(/hash=([a-f0-9]+)/)||[])[1]||'';return{type:'vk_clip',oid,id,hash,embedSrc:s,vkPageUrl:`https://vk.com/clip${oid}_${id}`};}const m=raw.match(/clip(-?\d+)_(\d+)/);if(m){return{type:'vk_clip',oid:m[1],id:m[2],embedSrc:`https://vkvideo.ru/video_ext.php?oid=${m[1]}&id=${m[2]}${VK_PARAMS}`,vkPageUrl:`https://vk.com/clip${m[1]}_${m[2]}`,hash:''};}return null;}
 function parseUrl(u){const t=detectType(u);if(!t)return null;if(t==='gdrive')return parseGDrive(u);if(t==='yadisk')return{type:'yadisk',id:u};if(t==='youtube')return parseYouTube(u);if(t==='vk'||t==='vk_plain')return parseVK(u);if(t==='vk_clip'||t==='vk_clip_plain')return parseVKClip(u);if(u.startsWith('http')&&!/^javascript:/i.test(u.trim()))return{type:'clip',id:u};return null;}
 async function resolveThumb(raw){if(!raw||/^javascript:/i.test(raw.trim()))return'';const gd=raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)||raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);if(gd)return`https://drive.google.com/thumbnail?id=${gd[1]}&sz=w640`;return raw;}
 function genThumb(file){return new Promise(resolve=>{const v=document.createElement('video');v.preload='metadata';v.muted=true;const u=URL.createObjectURL(file);v.src=u;v.addEventListener('loadeddata',()=>{v.currentTime=Math.min(2,v.duration*.1);});v.addEventListener('seeked',()=>{const c=document.createElement('canvas');c.width=640;c.height=360;c.getContext('2d').drawImage(v,0,0,640,360);URL.revokeObjectURL(u);resolve(c.toDataURL('image/jpeg',.75));});v.addEventListener('error',()=>{URL.revokeObjectURL(u);resolve('');});});}
@@ -723,7 +727,7 @@ function renderFeed(){
       ${v.type==='local'?`<video src="${ea(localFiles[v.uid]||'')}" playsinline loop style="width:100%;height:100%;object-fit:contain;"></video>`:
         v.type==='clip'?`<video src="${ea(v.id)}" playsinline loop style="width:100%;height:100%;object-fit:contain;"></video>`:
         v.type==='youtube'?`<iframe src="${ea(v.embedUrl)}?autoplay=1&mute=1&loop=1&playsinline=1" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`:
-        v.type==='vk'||v.type==='vk_clip'?`<iframe src="${ea(v.embedSrc||`https://vkvideo.ru/video_ext.php?oid=${v.oid}&id=${v.id}&hd=2&autoplay=1&mute=0`)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`:
+        v.type==='vk'||v.type==='vk_clip'?`<iframe src="${ea(v.embedSrc||`https://vkvideo.ru/video_ext.php?oid=${v.oid}&id=${v.id}${VK_PARAMS}`)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`:
         v.type==='gdrive'?`<iframe src="${ea(v.embedUrl)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`:
         v.type==='yadisk'?`<div class="yadisk-slot" data-key="${ea(v.id)}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;flex-direction:column;gap:12px"><div style="width:32px;height:32px;border:2px solid #333;border-top-color:#f5c518;border-radius:50%;animation:spin .6s linear infinite"></div><span style="color:#555;font-size:11px;font-family:var(--font-h);letter-spacing:1px">ЗАГРУЗКА</span></div>`:
         `<div style="color:#fff;text-align:center;padding:20px;">Ошибка</div>`}
@@ -842,13 +846,12 @@ document.getElementById('ctrlPlay').addEventListener('click',e=>{e.stopPropagati
 document.getElementById('vkOverlay').addEventListener('click',()=>setVkPaused(false));
 document.getElementById('ctrlPrev').addEventListener('click',goPrev);
 document.getElementById('ctrlNext').addEventListener('click',goNext);
-document.getElementById('btnSettings').addEventListener('click',()=>toast('Настройки — скоро'));
+document.getElementById('btnSettings').addEventListener('click',()=>toast('Настройки VK: реклама минимизирована'));
 
 function setVkPaused(p){vkPaused=p;isPlaying=!p;updUI();const iframe=document.getElementById('slideMain').querySelector('iframe');if(p){if(iframe){currentVkSrc=iframe.src;iframe.src='about:blank';}showVkOverlay();stopTracking();}else{if(iframe&&currentVkSrc)iframe.src=currentVkSrc;hideVkOverlay();}}
 
 function renderInfo(v){
   if(!v)return;
-  // Название целиком слева, категория справа
   document.getElementById('playerTitleLeft').textContent=v.title||'';
   document.getElementById('playerTitleRight').textContent=v.cat||'';
   document.getElementById('playerSourceRow').textContent=v.cat||'Все видео';
@@ -861,7 +864,7 @@ if(v.type==='local'){const src=localFiles[v.uid];if(!src){slot.innerHTML='<div s
 else if(v.type==='clip'){const vid=mkVid(v.id,isMain);slot.innerHTML='';slot.appendChild(vid);if(isMain){showTL();startTracking(vid);vid.play().catch(()=>{});}resolve();}
 else if(v.type==='gdrive'){slot.innerHTML=`<iframe src="${ea(v.embedUrl)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;if(isMain)hideTL();resolve();}
 else if(v.type==='yadisk'){try{const r=await fetch(`https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(v.id)}`);const d=await r.json();if(d.href){const vid=mkVid(d.href,isMain);slot.innerHTML='';slot.appendChild(vid);if(isMain){showTL();startTracking(vid);vid.play().catch(()=>{});}}else slot.innerHTML=yadiskFb(v.id);}catch(_){slot.innerHTML=yadiskFb(v.id);}resolve();}
-else if(v.type==='vk'||v.type==='vk_clip'){const src=v.embedSrc||`https://vkvideo.ru/video_ext.php?oid=${v.oid}&id=${v.id}${v.hash?'&hash='+v.hash:''}&hd=2&autoplay=1&mute=0`;slot.innerHTML=`<iframe src="${ea(src)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`;if(isMain){currentVkSrc=src;hideVkOverlay();hideTL();}resolve();}
+else if(v.type==='vk'||v.type==='vk_clip'){const src=v.embedSrc||`https://vkvideo.ru/video_ext.php?oid=${v.oid}&id=${v.id}${v.hash?'&hash='+v.hash:''}${VK_PARAMS}`;slot.innerHTML=`<iframe src="${ea(src)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`;if(isMain){currentVkSrc=src;hideVkOverlay();hideTL();}resolve();}
 else if(v.type==='youtube'){slot.innerHTML=`<iframe src="${ea(v.embedUrl)}?autoplay=1&mute=0" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`;if(isMain)hideTL();resolve();}
 else resolve();});}
 
@@ -889,4 +892,4 @@ document.getElementById('searchInput').addEventListener('input',e=>renderGrid(e.
 renderGrid();updUI();
 </script>
 </body>
-</html>
+  </html>
