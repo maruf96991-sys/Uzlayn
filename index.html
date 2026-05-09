@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VIDR</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;700;900&family=Onest:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f9f9f9;--bg2:#ffffff;--bg3:#f2f2f2;--surface:#ffffff;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.13);
+  --text:#0f0f0f;--text2:#606060;--text3:#aaa;
+  --red:#ff0000;--red-dim:rgba(255,0,0,.10);--red-mid:rgba(255,0,0,.30);
+  --ink:#0f0f0f;--faint:#ccc;--nav-bg:#ffffff;--thumb-bg:#e5e5e5;
+  --font-h:'Unbounded',sans-serif;--font-b:'Onest',sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0f0f0f;--bg2:#181818;--bg3:#222;--surface:#1a1a1a;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#f1f1f1;--text2:#aaa;--text3:#666;
+  --ink:#f1f1f1;--faint:#444;--nav-bg:#0f0f0f;--thumb-bg:#2a2a2a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);font-family:var(--font-b);color:var(--text);transition:background .25s,color .25s}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--faint);border-radius:99px}
+.screen{position:absolute;inset:0;display:none;flex-direction:column}
+.screen.active{display:flex}
+
+/* TOP BAR */
+.top-bar{padding:10px 14px;display:flex;align-items:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;transition:background .25s,border-color .25s}
+.logo{font-family:var(--font-h);font-weight:900;font-size:17px;letter-spacing:-1px;color:var(--text);flex-shrink:0;line-height:1}
+.logo span{color:var(--red)}
+.search-wrap{flex:1;position:relative;max-width:360px}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;opacity:.35;pointer-events:none;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.search-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);padding:8px 12px 8px 32px;border-radius:20px;color:var(--text);outline:none;font-family:var(--font-b);font-size:13px;transition:border-color .2s,background .25s}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-wrap input:focus{border-color:var(--red)}
+.theme-toggle{width:38px;height:38px;border-radius:50%;background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);flex-shrink:0;transition:background .15s,color .25s}
+.theme-toggle:hover{background:var(--bg3)}
+.theme-toggle svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+[data-theme="dark"] .icon-sun{display:none}
+[data-theme="light"] .icon-moon{display:none}
+
+/* BOTTOM NAV */
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;height:58px;background:var(--nav-bg);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;z-index:50;transition:background .25s,border-color .25s}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text3);cursor:pointer;transition:color .15s;font-size:10px;font-weight:500;padding:4px 12px;font-family:var(--font-b)}
+.nav-btn.active{color:var(--text)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn.active svg{stroke-width:2.2}
+.nav-add-btn{width:46px;height:46px;background:var(--red);border-radius:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s,opacity .15s;box-shadow:0 3px 12px rgba(255,0,0,.35)}
+.nav-add-btn:active{transform:scale(.88);opacity:.85}
+.nav-add-btn svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
+
+/* HOME GRID */
+.grid-scroll{flex:1;overflow-y:auto;padding-bottom:68px}
+.chip-bar{display:flex;gap:8px;padding:10px 12px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.chip-bar::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:6px 14px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
+.chip.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.yt-grid{display:flex;flex-direction:column}
+.yt-card{cursor:pointer;position:relative;transition:opacity .12s;user-select:none;margin-bottom:18px}
+.yt-card:active{opacity:.85}
+.yt-thumb{width:100%;aspect-ratio:16/9;background:var(--thumb-bg);position:relative;overflow:hidden}
+.yt-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.yt-thumb.has-img .thumb-ph{display:none}
+.thumb-ph svg{width:36px;height:36px;stroke:var(--faint);fill:none;stroke-width:1.2}
+.dur-badge{position:absolute;bottom:6px;right:7px;background:rgba(0,0,0,.8);color:#fff;font-size:11px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.2px;pointer-events:none}
+.type-badge{position:absolute;top:6px;left:6px;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 6px;border-radius:4px;pointer-events:none}
+.tb-clip{background:rgba(255,0,0,.85);color:#fff}
+.tb-local{background:rgba(44,182,125,.85);color:#fff}
+.tb-gdrive{background:rgba(66,133,244,.85);color:#fff}
+.tb-yadisk{background:rgba(201,168,76,.85);color:#fff}
+.tb-vk{background:rgba(81,129,184,.85);color:#fff}
+.tb-yt{background:rgba(255,0,0,.85);color:#fff}
+.yt-del{position:absolute;top:6px;right:6px;width:30px;height:30px;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);border-radius:8px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s;z-index:5;pointer-events:none}
+.yt-del svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round}
+.yt-card.show-delete .yt-del{opacity:1;pointer-events:all}
+.unavail-banner{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:12px;color:#ccc}
+.unavail-banner svg{width:18px;height:18px;stroke:#aaa;fill:none;stroke-width:1.6}
+.yt-body{display:flex;gap:10px;padding:10px 12px 0}
+.yt-avatar{width:36px;height:36px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:13px;font-weight:900;color:#fff;flex-shrink:0;line-height:1}
+.yt-info{flex:1;min-width:0}
+.yt-title{font-size:14px;font-weight:600;line-height:1.4;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:3px}
+.yt-meta{font-size:12px;color:var(--text2)}
+.yt-menu{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer;flex-shrink:0}
+.yt-menu svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.empty-state{padding:70px 24px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty-icon{width:64px;height:64px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center}
+.empty-icon svg{width:28px;height:28px;stroke:var(--text3);fill:none;stroke-width:1.5}
+.empty-state h3{font-size:16px;font-weight:700;color:var(--text2)}
+.empty-state p{font-size:13px;color:var(--text3);text-align:center}
+
+/* ══ VERTICAL FEED (TikTok стиль — без шапки) ══ */
+.vertical-feed{flex:1;overflow-y:auto;scroll-snap-type:y mandatory;padding-bottom:58px}
+.vertical-card{width:100%;height:calc(100vh - 58px);position:relative;scroll-snap-align:start;background:#000;display:flex;flex-direction:column;overflow:hidden}
+.vertical-card video,.vertical-card iframe{width:100%;height:100%;object-fit:contain;border:none}
+.vertical-grad{position:absolute;bottom:0;left:0;right:0;height:260px;background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.6) 45%,transparent 100%);pointer-events:none;z-index:15}
+.vertical-info{position:absolute;bottom:70px;left:0;right:72px;padding:0 16px;z-index:20}
+.vertical-title{font-size:15px;font-weight:700;color:#fff;line-height:1.4;text-shadow:0 1px 6px rgba(0,0,0,.6);letter-spacing:-.2px;margin-bottom:10px}
+.vertical-action-btn{pointer-events:all;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,255,255,.18),rgba(255,255,255,.06));backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:30px;padding:11px 20px;font-family:var(--font-b);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;max-width:fit-content;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:all .2s;letter-spacing:.3px}
+.vertical-action-btn.internal{background:linear-gradient(135deg,rgba(255,0,0,.35),rgba(255,0,0,.12));border-color:rgba(255,0,0,.4)}
+/* правая боковая панель */
+.vertical-side{position:absolute;right:12px;bottom:80px;z-index:20;display:flex;flex-direction:column;align-items:center;gap:20px}
+.v-side-btn{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:#fff}
+.v-side-btn svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5))}
+.v-side-btn span{font-size:11px;font-weight:600;color:rgba(255,255,255,.8);font-family:var(--font-h);letter-spacing:.3px}
+
+/* ══ ГОРИЗОНТАЛЬНЫЙ ПЛЕЕР (MX-стиль) ══ */
+#playerScreen{position:fixed;inset:0;background:#2a2a2e;z-index:200;display:none;flex-direction:column;padding-top:env(safe-area-inset-top);width:100vw;height:100vh;max-width:100%;max-height:100%}
+#playerScreen.open{display:flex}
+/* Ландшафт — всё на весь экран */
+@media (orientation:landscape){
+  #playerScreen{flex-direction:row;padding-top:0}
+  #playerScreen .player-back{position:absolute;top:10px;left:10px;z-index:50;margin:0}
+  #swipeContainer{flex:1;height:100vh}
+  #playerScreen .player-controls{width:260px;height:100vh;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:20px 16px}
+  #playerScreen .player-controls .player-btns-row{gap:8px}
+  #playerScreen .player-controls .pb2-play{width:54px;height:54px}
+  #playerScreen .player-controls .pb2-btn svg{width:24px;height:24px}
+}
+
+/* Кнопка закрыть V сверху */
+.player-back{position:relative;z-index:40;width:44px;height:44px;background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.7);margin:10px 0 0 10px;align-self:flex-start;flex-shrink:0}
+.player-back:active{color:#fff}
+.player-back svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Видео область — с отступами и скруглением как на скриншоте */
+#swipeContainer{flex:1;position:relative;overflow:hidden;background:#2a2a2e;display:flex;align-items:center;padding:0 0 6px}
+#swipeContainer > .video-slide{position:absolute;inset:0;display:flex;flex-direction:column;will-change:transform;background:#000}
+.video-slide{position:absolute;inset:0;display:flex;flex-direction:column;will-change:transform}
+.video-slide iframe,.video-slide video{flex:1;width:100%;height:100%;border:none;background:#000;outline:none}
+.slide-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#000;font-family:var(--font-h);font-size:9px;letter-spacing:1.5px;color:#333;text-transform:uppercase;z-index:1}
+.spinner{width:28px;height:28px;border:2px solid #1a1a1a;border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.swipe-dots{position:absolute;right:9px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;z-index:10;pointer-events:none}
+.s-dot{width:3px;height:3px;border-radius:50%;background:#2a2a2a;transition:all .25s}
+.s-dot.active{background:var(--red);height:16px;border-radius:2px}
+.swipe-lbl{position:absolute;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);backdrop-filter:blur(8px);color:#fff;font-size:10px;font-weight:600;letter-spacing:.5px;font-family:var(--font-h);text-transform:uppercase;padding:6px 14px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity .3s;z-index:25;white-space:nowrap}
+#lblUp{top:68px}#lblDown{bottom:220px}
+.swipe-lbl.show{opacity:1}
+.vk-overlay{position:absolute;inset:0;background:rgba(0,0,0,.94);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:16;cursor:pointer}
+.vk-overlay.show{display:flex}
+.vk-ring{width:64px;height:64px;border-radius:50%;background:rgba(255,0,0,.14);border:1.5px solid var(--red);display:flex;align-items:center;justify-content:center;animation:pulse 2s ease-in-out infinite}
+.vk-ring svg{width:24px;height:24px;fill:#fff;margin-left:3px}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+.vk-overlay p{font-size:11px;color:rgba(255,255,255,.5);font-family:var(--font-h);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+
+/* ══ НИЖНЯЯ ПАНЕЛЬ ПЛЕЕРА (точно как скриншот) ══ */
+.player-controls{
+  background:#1c1c1e;
+  padding:18px 20px 24px;
+  flex-shrink:0;
+}
+/* Строка с названиями — левая и правая части */
+.player-titles{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:14px;gap:12px;
+}
+.player-title-left{
+  font-size:14px;font-weight:500;color:#fff;
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:.9;font-family:var(--font-b);
+}
+.player-title-right{
+  font-size:14px;font-weight:500;color:#fff;
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-align:right;opacity:.9;font-family:var(--font-b);
+}
+/* Прогресс-бар жёлтый */
+.player-progress-wrap{margin-bottom:2px;position:relative}
+.player-timeline{
+  width:100%;height:3px;background:rgba(255,255,255,.18);
+  border-radius:2px;cursor:pointer;-webkit-appearance:none;appearance:none;outline:none;
+  accent-color:#f5c518;
+}
+.player-timeline::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#f5c518;cursor:pointer;box-shadow:0 0 8px rgba(245,197,24,.7);margin-top:-6px}
+.player-timeline::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
+.player-timeline::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#f5c518;border:none}
+.player-time-row{display:flex;justify-content:space-between;padding:5px 0 0;font-size:12px;color:rgba(255,255,255,.45);font-weight:500;letter-spacing:.2px;font-family:var(--font-b)}
+/* Кнопки управления */
+.player-btns-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:20px;padding:0 4px;
+}
+.pb2-btn{
+  background:none;border:none;color:rgba(255,255,255,.65);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:color .15s,transform .12s;
+  padding:6px;
+}
+.pb2-btn:active{transform:scale(.85);color:#fff}
+.pb2-btn svg{width:30px;height:30px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pb2-btn.settings-btn svg{width:28px;height:28px;color:rgba(120,190,220,.9)}
+.pb2-btn.active-btn{color:rgba(255,255,255,.85)}
+/* Большая кнопка Play/Pause — тёмный круг как на скриншоте */
+.pb2-play{
+  width:68px;height:68px;
+  background:rgba(255,255,255,.12);border-radius:50%;border:none;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:transform .12s,background .15s;
+}
+.pb2-play:active{transform:scale(.9);background:rgba(255,255,255,.2)}
+.pb2-play svg{width:28px;height:28px;fill:#fff;stroke:none}
+.pb2-play svg.pause-icon rect{fill:#fff}
+/* Нижняя подпись */
+.player-source-row{
+  margin-top:14px;
+  font-size:13px;color:rgba(255,255,255,.35);
+  font-weight:400;font-family:var(--font-b);
+}
+
+/* ══ PROFILE ══ */
+.profile-scroll{flex:1;overflow-y:auto;padding:0 0 78px}
+.prof-hero{margin:16px 14px 0;background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:20px;display:flex;align-items:center;gap:14px}
+.prof-ava{width:58px;height:58px;border-radius:18px;background:var(--red);display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-size:20px;font-weight:900;color:#fff;flex-shrink:0}
+.prof-name{font-family:var(--font-h);font-size:15px;font-weight:900;letter-spacing:-.3px;margin-bottom:2px;color:var(--text)}
+.prof-handle{font-size:12px;color:var(--text2);margin-bottom:10px}
+.prof-stats{display:flex;gap:18px}
+.pstat-n{font-family:var(--font-h);font-size:17px;font-weight:900;line-height:1;color:var(--text)}
+.pstat-l{font-size:9px;color:var(--text2);font-weight:600;letter-spacing:.8px;text-transform:uppercase;font-family:var(--font-h);margin-top:2px}
+.prof-grid-lbl{padding:16px 14px 8px;font-family:var(--font-h);font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2)}
+.prof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:0 14px;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.prof-cell{aspect-ratio:1;background:var(--thumb-bg);overflow:hidden;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;transition:opacity .12s}
+.prof-cell:hover{opacity:.8}
+.prof-cell svg{width:20px;height:20px;stroke:var(--faint);fill:none;stroke-width:1.5}
+.prof-cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sub-section{margin:16px 14px;background:var(--surface);border-radius:14px;border:1px solid var(--border);padding:14px}
+.sub-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+.sub-title{font-family:var(--font-h);font-size:13px;font-weight:800;letter-spacing:-.2px;color:var(--text)}
+.sub-add{background:var(--red);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-family:var(--font-h);font-size:9px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.sub-add svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+.sub-item{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sub-item:last-child{border-bottom:none}
+.sub-icon{width:38px;height:38px;border-radius:11px;background:var(--bg3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sub-icon svg{width:19px;height:19px;stroke:var(--text2);fill:none;stroke-width:1.5}
+.sub-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.sub-url{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.sub-actions{margin-left:auto;display:flex;gap:6px}
+.sub-btn{width:30px;height:30px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2)}
+.sub-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.sub-btn.danger:active{background:var(--red);color:#fff}
+
+/* ══ MODAL ══ */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:300;display:none;align-items:flex-end;justify-content:center}
+.modal.open{display:flex}
+.sheet{background:var(--bg2);border-radius:22px 22px 0 0;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;animation:sheetUp .26s cubic-bezier(.2,.7,.3,1.1);border-top:1px solid var(--border2)}
+@keyframes sheetUp{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
+.sheet-inner{padding:0 18px 40px}
+.sheet-handle{width:32px;height:3px;background:var(--faint);border-radius:2px;margin:14px auto 18px}
+.sheet h3{font-family:var(--font-h);font-size:17px;font-weight:900;letter-spacing:-.4px;margin-bottom:3px;color:var(--text)}
+.sheet-sub{font-size:12px;color:var(--text2);margin-bottom:18px}
+.seg{display:flex;background:var(--bg3);border-radius:10px;padding:3px;gap:2px;margin-bottom:14px}
+.seg-btn{flex:1;padding:9px 6px;border-radius:8px;background:transparent;border:none;color:var(--text2);cursor:pointer;font-family:var(--font-b);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.seg-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.seg-btn.active{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.field-lbl{font-family:var(--font-h);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin:14px 0 5px}
+.sheet input[type=text],.sheet select{width:100%;padding:11px 13px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:10px;outline:none;font-family:var(--font-b);font-size:14px;transition:border-color .2s}
+.sheet input[type=text]:focus{border-color:var(--red)}
+.sheet input[type=text]::placeholder{color:var(--text3)}
+.sheet select{cursor:pointer}
+.sheet select option{background:var(--bg2)}
+.detect-bar{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--text2);margin-bottom:8px;font-weight:500}
+.detect-bar.on{border-color:rgba(255,0,0,.3);color:var(--text);background:var(--red-dim)}
+.d-dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex-shrink:0}
+.detect-bar.on .d-dot{background:var(--red)}
+.vk-hint{background:rgba(81,129,184,.07);border:1px solid rgba(81,129,184,.2);border-radius:10px;padding:10px 13px;font-size:12px;color:#5181b8;line-height:1.7;display:none;margin-bottom:8px}
+.vk-hint.show{display:block}
+.vk-hint strong{color:#7aacd4}
+.file-drop{position:relative;border:2px dashed var(--border2);border-radius:14px;padding:26px 18px;text-align:center;cursor:pointer;background:var(--bg3)}
+.file-drop:hover{border-color:var(--red)}
+.file-drop-icon{width:46px;height:46px;border-radius:14px;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.file-drop-icon svg{width:22px;height:22px;stroke:var(--text2);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.file-drop-text{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.file-drop-sub{font-size:12px;color:var(--text2)}
+.file-chosen{display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid rgba(44,182,125,.25);border-radius:14px;padding:12px 14px}
+.file-chosen-icon{width:38px;height:38px;border-radius:11px;background:rgba(44,182,125,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.file-chosen-icon svg{width:18px;height:18px;stroke:#2cb67d;fill:none;stroke-width:2;stroke-linecap:round}
+.file-chosen-info{flex:1;min-width:0}
+.file-chosen-info .fn{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.file-chosen-info .fs{font-size:11px;color:var(--text2);margin-top:2px}
+.file-clear{background:var(--bg2);border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:8px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.file-clear svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.local-note{background:rgba(44,182,125,.06);border:1px solid rgba(44,182,125,.18);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;color:#2cb67d;line-height:1.6;display:flex;gap:7px}
+.local-note svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;margin-top:1px}
+.thumb-prev{border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:var(--bg3);position:relative;margin:6px 0 2px;display:none;border:1px solid var(--border)}
+.thumb-prev img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb-prev-err{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text2);font-size:11px}
+.thumb-prev-err svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.5}
+.action-tabs{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap}
+.act-tab{flex:1;min-width:80px;padding:9px 6px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;font-family:var(--font-b);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px}
+.act-tab svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.act-tab.active{background:var(--red-dim);border-color:var(--red-mid);color:var(--red)}
+.video-picker{max-height:170px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;background:var(--bg3)}
+.picker-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border)}
+.picker-item:last-child{border-bottom:none}
+.picker-item:hover,.picker-item.selected{background:var(--red-dim)}
+.picker-item.selected{border-left:3px solid var(--red)}
+.picker-thumb{width:42px;height:27px;border-radius:6px;background:var(--bg2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.picker-thumb svg{width:12px;height:12px;stroke:var(--text2);fill:none;stroke-width:1.5}
+.picker-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.picker-title{font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picker-type{font-size:10px;color:var(--text2);margin-top:2px}
+.btn-pub{background:var(--red);color:#fff;border:none;padding:15px;border-radius:12px;width:100%;font-family:var(--font-h);font-weight:700;font-size:13px;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;margin-top:16px}
+.btn-pub:active{opacity:.85}
+.btn-pub:disabled{opacity:.3;cursor:not-allowed}
+.btn-cancel{text-align:center;margin-top:12px;cursor:pointer;color:var(--text2);font-size:13px;padding:6px}
+
+/* CONFIRM */
+.confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.confirm-modal.open{display:flex}
+.confirm-box{background:var(--bg2);border-radius:18px;border:1px solid var(--border2);padding:24px 20px;width:100%;max-width:300px;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.confirm-box h4{font-family:var(--font-h);font-size:14px;font-weight:900;margin-bottom:6px;color:var(--text)}
+.confirm-box p{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.5}
+.confirm-btns{display:flex;gap:8px}
+.confirm-btn{flex:1;padding:12px;border-radius:10px;font-family:var(--font-h);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;border:none}
+.confirm-btn.cancel{background:var(--bg3);color:var(--text2)}
+.confirm-btn.danger{background:var(--red);color:#fff}
+
+/* TOAST */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(6px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-family:var(--font-h);font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="homeScreen">
+  <div class="top-bar">
+    <div class="logo">VI<span>D</span>R</div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Поиск...">
+    </div>
+    <button class="theme-toggle" id="themeToggle">
+      <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+  <div class="chip-bar" id="chipBar">
+    <div class="chip active" data-cat="all">Все</div>
+    <div class="chip" data-cat="🎬 Фильмы">Фильмы</div>
+    <div class="chip" data-cat="🎵 Музыка">Музыка</div>
+    <div class="chip" data-cat="⚽ Спорт">Спорт</div>
+    <div class="chip" data-cat="🎮 Гейминг">Гейминг</div>
+    <div class="chip" data-cat="📰 Новости">Новости</div>
+    <div class="chip" data-cat="🎭 Прочее">Прочее</div>
+  </div>
+  <div class="grid-scroll"><div class="yt-grid" id="videoGrid"></div></div>
+  <nav class="bottom-nav">
+    <div class="nav-btn active" id="navHome">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Главная</span>
+    </div>
+    <div class="nav-btn" id="navFeed">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Лента</span>
+    </div>
+    <div class="nav-add-btn" id="btnAdd">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    <div class="nav-btn" id="navProfile">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Профиль</span>
+    </div>
+  </nav>
+</div>
+
+<!-- VERTICAL FEED (без шапки!) -->
+<div class="screen" id="feedScreen">
+  <div class="vertical-feed" id="verticalFeed"></div>
+  <nav class="bottom-nav">
+    <div class="nav-btn" id="navHome3">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Главная</span>
+    </div>
+    <div class="nav-btn active" id="navFeed2">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Лента</span>
+    </div>
+    <div class="nav-add-btn" id="btnAddFeed">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    <div class="nav-btn" id="navProfile3">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Профиль</span>
+    </div>
+  </nav>
+</div>
+
+<!-- PROFILE -->
+<div class="screen" id="profileScreen">
+  <div class="top-bar">
+    <div class="logo">VI<span>D</span>R</div>
+    <div style="flex:1"></div>
+    <button class="theme-toggle" id="themeToggle2">
+      <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+  <div class="profile-scroll">
+    <div class="prof-hero">
+      <div class="prof-ava">V</div>
+      <div>
+        <div class="prof-name">Моя библиотека</div>
+        <div class="prof-handle">@vidr_user</div>
+        <div class="prof-stats">
+          <div><div class="pstat-n" id="statCount">0</div><div class="pstat-l">Видео</div></div>
+          <div><div class="pstat-n" id="statSubs">0</div><div class="pstat-l">Подписок</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="sub-section">
+      <div class="sub-header">
+        <div class="sub-title">Подписки на каналы</div>
+        <button class="sub-add" id="btnAddSub">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Добавить
+        </button>
+      </div>
+      <div id="subList"></div>
+    </div>
+    <div class="prof-grid-lbl">Последние добавленные</div>
+    <div class="prof-grid" id="profileGrid"></div>
+  </div>
+  <nav class="bottom-nav">
+    <div class="nav-btn" id="navHome2">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Главная</span>
+    </div>
+    <div class="nav-btn" id="navFeed3">
+      <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span>Лента</span>
+    </div>
+    <div class="nav-add-btn" id="btnAdd2">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+    <div class="nav-btn active" id="navProfile2">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Профиль</span>
+    </div>
+  </nav>
+</div>
+
+<!-- PLAYER (новый дизайн) -->
+<div id="playerScreen">
+  <div class="player-back" id="btnClose"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div id="swipeContainer">
+    <div class="video-slide" id="slideMain"></div>
+    <div class="video-slide" id="slideNext" style="transform:translateY(100%)"></div>
+    <div class="swipe-dots" id="swipeDots"></div>
+    <div class="swipe-lbl" id="lblUp">↑ Следующее</div>
+    <div class="swipe-lbl" id="lblDown">↓ Предыдущее</div>
+    <div class="vk-overlay" id="vkOverlay">
+      <div class="vk-ring"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+      <p>Нажмите для воспроизведения</p>
+    </div>
+  </div>
+  <!-- Новая нижняя панель -->
+  <div class="player-controls" id="playerControls">
+    <div class="player-titles">
+      <div class="player-title-left" id="playerTitleLeft">—</div>
+      <div class="player-title-right" id="playerTitleRight">—</div>
+    </div>
+    <div class="player-progress-wrap">
+      <input type="range" class="player-timeline" id="timeline" min="0" max="100" value="0" step="0.1">
+    </div>
+    <div class="player-time-row">
+      <span id="timeCur">0:00</span>
+      <span id="timeDur">0:00</span>
+    </div>
+    <div class="player-btns-row">
+      <!-- Шестерёнка — голубая как на скриншоте -->
+      <button class="pb2-btn settings-btn" id="btnSettings" title="Настройки">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="rgba(120,190,220,.9)" fill="none" stroke-width="1.6"/></svg>
+      </button>
+      <!-- Предыдущее |◀ -->
+      <button class="pb2-btn active-btn" id="ctrlPrev">
+        <svg viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20" fill="currentColor" stroke="none"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+      <!-- Play/Pause — круглая тёмная кнопка -->
+      <button class="pb2-play" id="ctrlPlay">
+        <svg id="iconPlay" viewBox="0 0 24 24" style="display:none"><polygon points="6 3 20 12 6 21 6 3" fill="#fff"/></svg>
+        <svg id="iconPause" viewBox="0 0 24 24" class="pause-icon"><rect x="5" y="3" width="4" height="18" fill="#fff" rx="1"/><rect x="15" y="3" width="4" height="18" fill="#fff" rx="1"/></svg>
+      </button>
+      <!-- Следующее ▶| -->
+      <button class="pb2-btn active-btn" id="ctrlNext">
+        <svg viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor" stroke="none"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+      </button>
+      <!-- Полный экран [ ] -->
+      <button class="pb2-btn active-btn" id="btnFullscreen">
+        <svg id="fullscreenIcon" viewBox="0 0 24 24"><polyline points="8 3 3 3 3 8"/><polyline points="21 8 21 3 16 3"/><polyline points="16 21 21 21 21 16"/><polyline points="3 16 3 21 8 21"/></svg>
+      </button>
+    </div>
+    <div class="player-source-row" id="playerSourceRow">Все видео</div>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal" id="addModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-inner">
+      <h3>Добавить видео</h3>
+      <div class="sheet-sub">Ссылка или файл с устройства</div>
+      <div class="seg" id="videoTypeSeg">
+        <button class="seg-btn active" data-vtype="horizontal"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/></svg>Горизонтальное</button>
+        <button class="seg-btn" data-vtype="vertical"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>Вертикальное</button>
+      </div>
+      <div class="seg">
+        <button class="seg-btn active" data-src="link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>По ссылке</button>
+        <button class="seg-btn" data-src="file"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>С устройства</button>
+      </div>
+      <div id="panelLink">
+        <div class="detect-bar" id="detectBar"><span class="d-dot"></span><span id="detectLbl">Тип не определён</span><span id="detectEmoji" style="margin-left:auto">🔍</span></div>
+        <div class="vk-hint" id="vkHint"><strong>Для VK нужен embed-код:</strong><br>Открой видео → Поделиться → <strong>Экспортировать</strong><br>Скопируй весь &lt;iframe ...&gt; и вставь сюда</div>
+        <div class="field-lbl">Ссылка *</div>
+        <input type="text" id="vUrl" placeholder="YouTube, VK embed, Google Drive, .mp4...">
+      </div>
+      <div id="panelFile" style="display:none">
+        <div class="file-drop" id="fileDrop">
+          <div class="file-drop-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="file-drop-text">Нажмите для выбора файла</div>
+          <div class="file-drop-sub">MP4, WebM, MOV и другие</div>
+          <input type="file" id="fileInput" accept="video/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;">
+        </div>
+        <div class="file-chosen" id="fileChosen" style="display:none">
+          <div class="file-chosen-icon"><svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+          <div class="file-chosen-info"><div class="fn" id="fileChosenName"></div><div class="fs" id="fileChosenSize"></div></div>
+          <button class="file-clear" id="fileClear"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="local-note"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Видео доступно пока страница открыта.</div>
+      </div>
+      <div class="field-lbl">Название</div>
+      <input type="text" id="vTitle" placeholder="Будет определено автоматически">
+      <div class="field-lbl">Превью</div>
+      <input type="text" id="vThumb" placeholder="URL обложки (необязательно)">
+      <div class="thumb-prev" id="thumbPrev"><img id="thumbPrevImg" src="" alt=""><div class="thumb-prev-err" id="thumbPrevErr"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Не удалось загрузить</span></div></div>
+      <div id="actionSection" style="display:none">
+        <div class="field-lbl">Действие (кнопка)</div>
+        <div class="action-tabs">
+          <button class="act-tab active" data-atype="none"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Нет</button>
+          <button class="act-tab" data-atype="link"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>Ссылка</button>
+          <button class="act-tab" data-atype="internal"><svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>Видео</button>
+        </div>
+        <div id="actionPanelLink" style="display:none">
+          <input type="text" id="actionUrl" placeholder="https://...">
+          <div style="height:6px"></div>
+          <input type="text" id="actionLabel" placeholder="Текст кнопки">
+        </div>
+        <div id="actionPanelInternal" style="display:none">
+          <input type="text" id="actionLabel2" placeholder="Текст кнопки">
+          <div class="field-lbl">Видео из библиотеки</div>
+          <div class="video-picker" id="videoPicker"></div>
+        </div>
+      </div>
+      <div class="field-lbl">Категория</div>
+      <select id="vCat">
+        <option>🎬 Фильмы</option><option>🎵 Музыка</option><option>⚽ Спорт</option>
+        <option>🎮 Гейминг</option><option>📰 Новости</option><option>🎭 Прочее</option>
+      </select>
+      <button class="btn-pub" id="btnSave">Добавить в библиотеку</button>
+      <div class="btn-cancel" id="btnCancel">Отмена</div>
+    </div>
+  </div>
+</div>
+
+<!-- SUB MODAL -->
+<div class="modal" id="subModal">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-inner">
+      <h3>Добавить подписку</h3>
+      <div class="sheet-sub">YouTube канал/плейлист или VK плейлист</div>
+      <div class="field-lbl">Ссылка на канал/плейлист</div>
+      <input type="text" id="subUrl" placeholder="https://www.youtube.com/@channel или vk.com...">
+      <div class="vk-hint" id="subVkHint" style="display:none">
+        <strong>Для VK нужен сервисный ключ:</strong><br>
+        <input type="text" id="vkToken" placeholder="Введите VK сервисный ключ" style="margin-top:8px;font-size:12px;padding:8px;">
+        <div style="font-size:11px;margin-top:4px;opacity:.7;">Ключ сохраняется локально.</div>
+      </div>
+      <div class="field-lbl">Категория</div>
+      <select id="subCat">
+        <option>🎬 Фильмы</option><option>🎵 Музыка</option><option>⚽ Спорт</option>
+        <option>🎮 Гейминг</option><option>📰 Новости</option><option>🎭 Прочее</option>
+      </select>
+      <button class="btn-pub" id="btnSubSave">Добавить подписку</button>
+      <div class="btn-cancel" id="btnSubCancel">Отмена</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-box">
+    <h4>Удалить видео?</h4>
+    <p>Это действие нельзя отменить.</p>
+    <div class="confirm-btns">
+      <button class="confirm-btn cancel" id="confirmCancel">Отмена</button>
+      <button class="confirm-btn danger" id="confirmOk">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+let videos=[];try{videos=JSON.parse(localStorage.getItem('vidr_v2'))||[];}catch(_){videos=[];}
+const localFiles={};
+function save(){try{localStorage.setItem('vidr_v2',JSON.stringify(videos));}catch(_){}}
+let subscriptions=[];try{subscriptions=JSON.parse(localStorage.getItem('vidr_subs')||'[]');}catch(_){subscriptions=[];}
+function saveSubs(){try{localStorage.setItem('vidr_subs',JSON.stringify(subscriptions));}catch(_){}}
+let vkServiceToken=localStorage.getItem('vidr_vk_token')||'';
+
+const html=document.documentElement;
+let darkMode=localStorage.getItem('vidr_dark')==='1';
+function applyTheme(){html.setAttribute('data-theme',darkMode?'dark':'light');localStorage.setItem('vidr_dark',darkMode?'1':'0');}
+applyTheme();
+function toggleTheme(){darkMode=!darkMode;applyTheme();}
+document.getElementById('themeToggle').addEventListener('click',toggleTheme);
+document.getElementById('themeToggle2').addEventListener('click',toggleTheme);
+
+function eh(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function ea(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmtSize(b){if(b>1e9)return(b/1e9).toFixed(1)+' ГБ';if(b>1e6)return(b/1e6).toFixed(1)+' МБ';return(b/1e3).toFixed(0)+' КБ';}
+function fmtTime(s){if(!s||!isFinite(s)||s<0)return'0:00';const m=Math.floor(s/60),ss=Math.floor(s%60);return`${m}:${ss<10?'0':''}${ss}`;}
+let _tt;
+function toast(msg,ms=2200){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),ms);}
+
+let _confirmResolve=null;
+function confirmDlg(){return new Promise(res=>{_confirmResolve=res;document.getElementById('confirmModal').classList.add('open');});}
+document.getElementById('confirmCancel').addEventListener('click',()=>{document.getElementById('confirmModal').classList.remove('open');if(_confirmResolve){_confirmResolve(false);_confirmResolve=null;}});
+document.getElementById('confirmOk').addEventListener('click',()=>{document.getElementById('confirmModal').classList.remove('open');if(_confirmResolve){_confirmResolve(true);_confirmResolve=null;}});
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  if(id==='profileScreen')renderProfile();
+  if(id==='feedScreen')renderFeed();
+}
+document.getElementById('navHome').addEventListener('click',()=>showScreen('homeScreen'));
+document.getElementById('navHome2').addEventListener('click',()=>showScreen('homeScreen'));
+document.getElementById('navHome3').addEventListener('click',()=>showScreen('homeScreen'));
+document.getElementById('navFeed').addEventListener('click',()=>showScreen('feedScreen'));
+document.getElementById('navFeed2').addEventListener('click',()=>showScreen('feedScreen'));
+document.getElementById('navFeed3').addEventListener('click',()=>showScreen('feedScreen'));
+document.getElementById('navProfile').addEventListener('click',()=>showScreen('profileScreen'));
+document.getElementById('navProfile2').addEventListener('click',()=>showScreen('profileScreen'));
+document.getElementById('navProfile3').addEventListener('click',()=>showScreen('profileScreen'));
+document.getElementById('btnAdd').addEventListener('click',()=>openModal('horizontal'));
+document.getElementById('btnAdd2').addEventListener('click',()=>openModal('horizontal'));
+document.getElementById('btnAddFeed').addEventListener('click',()=>openModal('vertical'));
+
+let activeChip='all';
+document.getElementById('chipBar').addEventListener('click',e=>{
+  const chip=e.target.closest('.chip');if(!chip)return;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');activeChip=chip.dataset.cat;
+  renderGrid(document.getElementById('searchInput').value);
+});
+
+function detectType(u){
+  if(!u)return null;
+  if(/<iframe/i.test(u)&&/vkvideo\.ru|vk\.com\/video_ext/i.test(u)){if(/clip/i.test(u))return'vk_clip';return'vk';}
+  if(/vk\.com\/clip|vk\.ru\/clip|vkvideo\.ru.*clip/i.test(u))return'vk_clip_plain';
+  if(/vk\.com.*video|vkvideo\.ru/i.test(u))return'vk_plain';
+  if(/youtube\.com|youtu\.be/i.test(u))return'youtube';
+  if(/drive\.google\.com/.test(u))return'gdrive';
+  if(/yadi\.sk|disk\.yandex\.(ru|com|kz|by|ua)/.test(u))return'yadisk';
+  if(u.startsWith('http'))return'clip';
+  return null;
+}
+const TYPE_INFO={clip:['📎','Прямой MP4'],gdrive:['📁','Google Drive'],yadisk:['☁️','Яндекс Диск'],vk:['💙','VK Видео (embed)'],vk_clip:['💙','VK Видео (embed)'],vk_clip_plain:['⚠️','VK Видео — нужен embed-код'],vk_plain:['⚠️','VK — нужен embed-код'],youtube:['▶️','YouTube']};
+
+function parseGDrive(u){const m=u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)||u.match(/[?&]id=([a-zA-Z0-9_-]+)/);if(!m)return null;return{type:'gdrive',id:m[1],embedUrl:`https://drive.google.com/file/d/${m[1]}/preview`};}
+function parseYouTube(u){let vid=null;const short=u.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);if(short)vid=short[1];const long=u.match(/[?&]v=([a-zA-Z0-9_-]+)/);if(long)vid=long[1];const embed=u.match(/embed\/([a-zA-Z0-9_-]+)/);if(embed)vid=embed[1];if(!vid)return null;return{type:'youtube',id:vid,embedUrl:`https://www.youtube.com/embed/${vid}`};}
+function parseVK(raw){const src=raw.match(/src=["']([^"']*(?:vkvideo\.ru|vk\.com\/video_ext)[^"']*)["']/i);if(src){let s=src[1];s=s.replace(/[&?]mute=\d/g,'');s=s.replace(/[&?]autoplay=\d/g,'');if(!s.includes('autoplay'))s+=(s.includes('?')?'&':'?')+'autoplay=1';if(!s.includes('mute=0'))s+='&mute=0';const oid=(s.match(/oid=(-?\d+)/)||[])[1]||'';const id=(s.match(/[?&]id=(\d+)/)||[])[1]||'';const hash=(s.match(/hash=([a-f0-9]+)/)||[])[1]||'';return{type:'vk',id,oid,hash,embedSrc:s,vkPageUrl:`https://vk.com/video${oid}_${id}`};}const m=raw.match(/video(-?\d+)_(\d+)/);if(!m)return null;return{type:'vk',oid:m[1],id:m[2],hash:'',embedSrc:`https://vkvideo.ru/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1&mute=0`,vkPageUrl:`https://vk.com/video${m[1]}_${m[2]}`};}
+function parseVKClip(raw){const src=raw.match(/src=["']([^"']*vkvideo\.ru[^"']*clip[^"']*)["']/i);if(src){let s=src[1];s=s.replace(/[&?]mute=\d/g,'');s=s.replace(/[&?]autoplay=\d/g,'');if(!s.includes('autoplay'))s+=(s.includes('?')?'&':'?')+'autoplay=1';if(!s.includes('mute=0'))s+='&mute=0';const oid=(s.match(/oid=(-?\d+)/)||[])[1]||'';const id=(s.match(/[?&]id=(\d+)/)||[])[1]||'';const hash=(s.match(/hash=([a-f0-9]+)/)||[])[1]||'';return{type:'vk_clip',oid,id,hash,embedSrc:s,vkPageUrl:`https://vk.com/clip${oid}_${id}`};}const m=raw.match(/clip(-?\d+)_(\d+)/);if(m){return{type:'vk_clip',oid:m[1],id:m[2],embedSrc:`https://vkvideo.ru/video_ext.php?oid=${m[1]}&id=${m[2]}&hd=2&autoplay=1&mute=0`,vkPageUrl:`https://vk.com/clip${m[1]}_${m[2]}`,hash:''};}return null;}
+function parseUrl(u){const t=detectType(u);if(!t)return null;if(t==='gdrive')return parseGDrive(u);if(t==='yadisk')return{type:'yadisk',id:u};if(t==='youtube')return parseYouTube(u);if(t==='vk'||t==='vk_plain')return parseVK(u);if(t==='vk_clip'||t==='vk_clip_plain')return parseVKClip(u);if(u.startsWith('http')&&!/^javascript:/i.test(u.trim()))return{type:'clip',id:u};return null;}
+async function resolveThumb(raw){if(!raw||/^javascript:/i.test(raw.trim()))return'';const gd=raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)||raw.match(/[?&]id=([a-zA-Z0-9_-]+)/);if(gd)return`https://drive.google.com/thumbnail?id=${gd[1]}&sz=w640`;return raw;}
+function genThumb(file){return new Promise(resolve=>{const v=document.createElement('video');v.preload='metadata';v.muted=true;const u=URL.createObjectURL(file);v.src=u;v.addEventListener('loadeddata',()=>{v.currentTime=Math.min(2,v.duration*.1);});v.addEventListener('seeked',()=>{const c=document.createElement('canvas');c.width=640;c.height=360;c.getContext('2d').drawImage(v,0,0,640,360);URL.revokeObjectURL(u);resolve(c.toDataURL('image/jpeg',.75));});v.addEventListener('error',()=>{URL.revokeObjectURL(u);resolve('');});});}
+
+let srcMode='link',chosenFile=null,actionType='none',pickedVideoUid=null,videoType='horizontal';
+document.getElementById('videoTypeSeg').addEventListener('click',e=>{const btn=e.target.closest('.seg-btn');if(!btn)return;document.querySelectorAll('#videoTypeSeg .seg-btn').forEach(b=>b.classList.toggle('active',b===btn));videoType=btn.dataset.vtype;document.getElementById('actionSection').style.display=videoType==='vertical'?'block':'none';if(videoType==='horizontal'){actionType='none';document.getElementById('actionPanelLink').style.display='none';document.getElementById('actionPanelInternal').style.display='none';document.querySelectorAll('.act-tab').forEach(b=>b.classList.toggle('active',b.dataset.atype==='none'));}});
+document.querySelectorAll('.seg-btn[data-src]').forEach(btn=>{btn.addEventListener('click',()=>{srcMode=btn.dataset.src;document.querySelectorAll('.seg-btn[data-src]').forEach(b=>b.classList.toggle('active',b===btn));document.getElementById('panelLink').style.display=srcMode==='link'?'block':'none';document.getElementById('panelFile').style.display=srcMode==='file'?'block':'none';});});
+document.querySelectorAll('.act-tab').forEach(btn=>{btn.addEventListener('click',()=>{actionType=btn.dataset.atype;document.querySelectorAll('.act-tab').forEach(b=>b.classList.toggle('active',b===btn));document.getElementById('actionPanelLink').style.display=actionType==='link'?'block':'none';document.getElementById('actionPanelInternal').style.display=actionType==='internal'?'block':'none';if(actionType==='internal')renderPicker();});});
+document.getElementById('vUrl').addEventListener('input',async e=>{const val=e.target.value.trim(),t=detectType(val);const bar=document.getElementById('detectBar');bar.classList.toggle('on',!!t&&t!=='vk_plain'&&t!=='vk_clip_plain');if(t&&TYPE_INFO[t]){document.getElementById('detectEmoji').textContent=TYPE_INFO[t][0];document.getElementById('detectLbl').textContent=TYPE_INFO[t][1];}else{document.getElementById('detectEmoji').textContent='🔍';document.getElementById('detectLbl').textContent='Тип не определён';}document.getElementById('vkHint').classList.toggle('show',t==='vk_plain'||t==='vk_clip_plain');});
+document.getElementById('vThumb').addEventListener('input',async e=>{const raw=e.target.value.trim(),wrap=document.getElementById('thumbPrev');if(!raw){wrap.style.display='none';return;}wrap.style.display='block';const url=await resolveThumb(raw);if(!url){document.getElementById('thumbPrevImg').style.display='none';document.getElementById('thumbPrevErr').style.display='flex';return;}const img=document.getElementById('thumbPrevImg');img.src=url;img.onerror=()=>{img.style.display='none';document.getElementById('thumbPrevErr').style.display='flex';};img.onload=()=>{document.getElementById('thumbPrevErr').style.display='none';img.style.display='block';};});
+document.getElementById('fileInput').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;chosenFile=f;document.getElementById('fileDrop').style.display='none';document.getElementById('fileChosen').style.display='flex';document.getElementById('fileChosenName').textContent=f.name;document.getElementById('fileChosenSize').textContent=fmtSize(f.size);});
+document.getElementById('fileClear').addEventListener('click',()=>{chosenFile=null;try{document.getElementById('fileInput').value='';}catch(_){}document.getElementById('fileDrop').style.display='block';document.getElementById('fileChosen').style.display='none';});
+function renderPicker(){const wrap=document.getElementById('videoPicker');if(!videos.length){wrap.innerHTML='<div style="padding:14px;text-align:center;font-size:12px;color:var(--text2)">Нет видео</div>';return;}wrap.innerHTML=videos.map(v=>`<div class="picker-item${pickedVideoUid===v.uid?' selected':''}" data-uid="${v.uid}"><div class="picker-thumb">${v.thumb?`<img src="${ea(v.thumb)}">`:'<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>'}</div><div><div class="picker-title">${eh(v.title)}</div><div class="picker-type">${v.type.toUpperCase()}</div></div></div>`).join('');wrap.querySelectorAll('.picker-item').forEach(item=>item.addEventListener('click',()=>{pickedVideoUid=Number(item.dataset.uid);wrap.querySelectorAll('.picker-item').forEach(i=>i.classList.toggle('selected',Number(i.dataset.uid)===pickedVideoUid));}));}
+function openModal(vtype='horizontal'){videoType=vtype;document.querySelectorAll('#videoTypeSeg .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.vtype===vtype));document.getElementById('actionSection').style.display=vtype==='vertical'?'block':'none';if(vtype==='horizontal'){actionType='none';document.getElementById('actionPanelLink').style.display='none';document.getElementById('actionPanelInternal').style.display='none';document.querySelectorAll('.act-tab').forEach(b=>b.classList.toggle('active',b.dataset.atype==='none'));}document.getElementById('addModal').classList.add('open');renderPicker();}
+function closeModal(){document.getElementById('addModal').classList.remove('open');['vUrl','vTitle','vThumb','actionUrl','actionLabel','actionLabel2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('thumbPrev').style.display='none';document.getElementById('detectBar').classList.remove('on');document.getElementById('detectLbl').textContent='Тип не определён';document.getElementById('detectEmoji').textContent='🔍';document.getElementById('vkHint').classList.remove('show');chosenFile=null;pickedVideoUid=null;actionType='none';try{document.getElementById('fileInput').value='';}catch(_){}document.getElementById('fileDrop').style.display='block';document.getElementById('fileChosen').style.display='none';document.getElementById('actionPanelLink').style.display='none';document.getElementById('actionPanelInternal').style.display='none';document.querySelectorAll('.act-tab').forEach(b=>b.classList.toggle('active',b.dataset.atype==='none'));document.querySelectorAll('.seg-btn[data-src]').forEach(b=>b.classList.toggle('active',b.dataset.src==='link'));srcMode='link';document.getElementById('panelLink').style.display='block';document.getElementById('panelFile').style.display='none';}
+document.getElementById('btnCancel').addEventListener('click',closeModal);
+document.getElementById('addModal').addEventListener('click',e=>{if(e.target===document.getElementById('addModal'))closeModal();});
+document.getElementById('btnSave').addEventListener('click',async()=>{
+  const title=document.getElementById('vTitle').value.trim();const cat=document.getElementById('vCat').value;const btn=document.getElementById('btnSave');btn.textContent='Загрузка...';btn.disabled=true;
+  let action=null;
+  if(videoType==='vertical'&&actionType==='link'){const url=document.getElementById('actionUrl').value.trim();if(url&&!/^javascript:/i.test(url)){const label=document.getElementById('actionLabel').value.trim()||'Смотреть полностью';action={type:'link',url,label};}}
+  else if(videoType==='vertical'&&actionType==='internal'&&pickedVideoUid){const label=document.getElementById('actionLabel2').value.trim()||'Смотреть видео';action={type:'internal',uid:pickedVideoUid,label};}
+  let vid=null;
+  if(srcMode==='file'){if(!chosenFile){toast('Выберите файл');btn.textContent='Добавить в библиотеку';btn.disabled=false;return;}const uid=Date.now();localFiles[uid]=URL.createObjectURL(chosenFile);const thumb=await genThumb(chosenFile);vid={uid,type:'local',id:'__local__',title:title||chosenFile.name.replace(/\.[^.]+$/,''),cat,views:'0',thumb,fileName:chosenFile.name,fileSize:fmtSize(chosenFile.size),action,vertical:videoType==='vertical'};}
+  else{const rawUrl=document.getElementById('vUrl').value.trim();if(!rawUrl){toast('Введите ссылку');btn.textContent='Добавить в библиотеку';btn.disabled=false;return;}const parsed=parseUrl(rawUrl);if(!parsed){toast('Не удалось распознать ссылку');btn.textContent='Добавить в библиотеку';btn.disabled=false;return;}const thumbRaw=document.getElementById('vThumb').value.trim();const customThumb=thumbRaw?await resolveThumb(thumbRaw):'';const DEFS={clip:'Видеоклип',gdrive:'Google Drive',yadisk:'Яндекс Диск',vk:'VK Видео',vk_clip:'VK Видео',youtube:'YouTube'};vid={uid:Date.now(),title:title||DEFS[parsed.type]||'Видео',cat,views:(Math.random()*9+.5).toFixed(1)+'K',thumb:customThumb,action,vertical:videoType==='vertical',...parsed};if(parsed.type==='youtube'&&!customThumb)vid.thumb=`https://img.youtube.com/vi/${parsed.id}/hqdefault.jpg`;}
+  videos.unshift(vid);save();renderGrid();renderFeed();closeModal();toast('Видео добавлено');btn.textContent='Добавить в библиотеку';btn.disabled=false;
+});
+
+const TYPE_META={clip:{lbl:'КЛИП',tbCls:'tb-clip'},local:{lbl:'ФАЙЛ',tbCls:'tb-local'},gdrive:{lbl:'DRIVE',tbCls:'tb-gdrive'},yadisk:{lbl:'ДИСК',tbCls:'tb-yadisk'},vk:{lbl:'VK',tbCls:'tb-vk'},vk_clip:{lbl:'VK',tbCls:'tb-vk'},youtube:{lbl:'YT',tbCls:'tb-yt'}};
+const CAT_COLORS=['#e53935','#8e24aa','#1e88e5','#43a047','#fb8c00','#6d4c41','#00897b','#3949ab'];
+function catColor(cat){let h=0;for(let i=0;i<cat.length;i++)h=(h*31+cat.charCodeAt(i))%CAT_COLORS.length;return CAT_COLORS[h];}
+
+function renderGrid(query=''){
+  const grid=document.getElementById('videoGrid');const q=query.toLowerCase();
+  let list=videos.filter(v=>v.title.toLowerCase().includes(q)&&!v.vertical);
+  if(activeChip!=='all')list=list.filter(v=>v.cat===activeChip);
+  if(!list.length){grid.innerHTML=`<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><h3>${q||activeChip!=='all'?'Ничего не найдено':'Библиотека пуста'}</h3><p>${q?'Попробуй другой запрос':activeChip!=='all'?'В этой категории нет видео':'Нажми + чтобы добавить первое видео'}</p></div>`;return;}
+  grid.innerHTML=list.map((v,i)=>{const m=TYPE_META[v.type]||TYPE_META.clip;const unavail=v.type==='local'&&!localFiles[v.uid];const ini=v.title.trim()[0]?.toUpperCase()||'?';const aColor=catColor(v.cat||'');return`<div class="yt-card" data-idx="${i}"><div class="yt-thumb${v.thumb?' has-img':''}"><img src="${v.thumb?ea(v.thumb):''}" loading="lazy"><div class="thumb-ph"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div><div class="type-badge ${m.tbCls}">${m.lbl}</div>${v.views&&v.type!=='local'?`<div class="dur-badge">${v.views}</div>`:''}<div class="yt-del" data-del="${v.uid}"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>${unavail?`<div class="unavail-banner"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Загрузи снова</span></div>`:''}</div><div class="yt-body"><div class="yt-avatar" style="background:${aColor}">${ini}</div><div class="yt-info"><div class="yt-title">${eh(v.title)}</div><div class="yt-meta">${eh(v.cat)}${v.type==='local'?' · '+v.fileSize:' · '+v.views+' просмотров'}</div></div><div class="yt-menu" data-del="${v.uid}"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></div></div></div>`;}).join('');
+  grid.querySelectorAll('.yt-card').forEach(card=>{setupLongPress(card);card.addEventListener('click',e=>{if(e.target.closest('[data-del]'))return;const idx=Number(card.dataset.idx);const v=list[idx];if(v?.type==='local'&&!localFiles[v.uid]){toast('Файл недоступен — добавь снова');return;}openPlayer(idx,list);});const img=card.querySelector('img');if(img)img.addEventListener('error',()=>{img.remove();card.querySelector('.yt-thumb').classList.remove('has-img');});});
+  grid.querySelectorAll('[data-del]').forEach(b=>{b.addEventListener('click',async e=>{e.stopPropagation();const uid=Number(b.dataset.del);const yes=await confirmDlg();if(!yes)return;if(localFiles[uid]){URL.revokeObjectURL(localFiles[uid]);delete localFiles[uid];}videos=videos.filter(v=>v.uid!==uid);save();renderGrid(document.getElementById('searchInput').value);renderFeed();renderProfile();});});
+}
+function setupLongPress(el){let t=null;const go=()=>{t=setTimeout(()=>{el.classList.toggle('show-delete');toast(el.classList.contains('show-delete')?'Нажми ⋮ для удаления':'Режим удаления выключен');},500);};const stop=()=>clearTimeout(t);el.addEventListener('touchstart',go,{passive:true});el.addEventListener('touchend',stop);el.addEventListener('touchmove',stop,{passive:true});el.addEventListener('mousedown',go);el.addEventListener('mouseup',stop);}
+
+/* VERTICAL FEED */
+function renderFeed(){
+  const feed=document.getElementById('verticalFeed');
+  const list=videos.filter(v=>v.vertical);
+  if(!list.length){feed.innerHTML='<div class="empty-state" style="padding-top:30vh"><div class="empty-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/></svg></div><h3>Лента пуста</h3><p>Добавьте вертикальные видео через +</p></div>';return;}
+  // Сначала рендерим карточки с плейсхолдером для yadisk
+  feed.innerHTML=list.map((v,i)=>`
+    <div class="vertical-card" data-idx="${i}" data-uid="${v.uid}" data-type="${v.type}">
+      ${v.type==='local'?`<video src="${ea(localFiles[v.uid]||'')}" playsinline loop style="width:100%;height:100%;object-fit:contain;"></video>`:
+        v.type==='clip'?`<video src="${ea(v.id)}" playsinline loop style="width:100%;height:100%;object-fit:contain;"></video>`:
+        v.type==='youtube'?`<iframe src="${ea(v.embedUrl)}?autoplay=1&mute=1&loop=1&playsinline=1" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`:
+        v.type==='vk'||v.type==='vk_clip'?`<iframe src="${ea(v.embedSrc||`https://vkvideo.ru/video_ext.php?oid=${v.oid}&id=${v.id}&hd=2&autoplay=1&mute=0`)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`:
+        v.type==='gdrive'?`<iframe src="${ea(v.embedUrl)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`:
+        v.type==='yadisk'?`<div class="yadisk-slot" data-key="${ea(v.id)}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#000;flex-direction:column;gap:12px"><div style="width:32px;height:32px;border:2px solid #333;border-top-color:#f5c518;border-radius:50%;animation:spin .6s linear infinite"></div><span style="color:#555;font-size:11px;font-family:var(--font-h);letter-spacing:1px">ЗАГРУЗКА</span></div>`:
+        `<div style="color:#fff;text-align:center;padding:20px;">Ошибка</div>`}
+      <div class="vertical-grad"></div>
+      <div class="vertical-info">
+        <div class="vertical-title">${eh(v.title)}</div>
+        ${v.action&&v.action.type==='link'?`<a href="${ea(v.action.url)}" target="_blank" rel="noopener" class="vertical-action-btn"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>${eh(v.action.label)}</a>`:''}
+        ${v.action&&v.action.type==='internal'?`<button class="vertical-action-btn internal" data-action-uid="${v.action.uid}"><svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>${eh(v.action.label)}</button>`:''}
+      </div>
+      <div class="vertical-side">
+        <div class="v-side-btn" data-del-v="${v.uid}">
+          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          <span>Удалить</span>
+        </div>
+        <div class="v-side-btn" data-share-v="${v.uid}" data-share-title="${ea(v.title)}">
+          <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>Поделиться</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Асинхронно подгружаем Яндекс Диск видео
+  feed.querySelectorAll('.yadisk-slot').forEach(async slot=>{
+    const key=slot.dataset.key;
+    try{
+      const r=await fetch(`https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(key)}`,{signal:AbortSignal.timeout(6000)});
+      const d=await r.json();
+      if(d.href){
+        const vid=document.createElement('video');
+        vid.src=d.href;vid.playsInline=true;vid.loop=true;vid.muted=false;
+        vid.style.cssText='width:100%;height:100%;object-fit:contain;';
+        slot.replaceWith(vid);
+      } else throw new Error('no href');
+    } catch(_){
+      slot.innerHTML=`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;padding:20px;text-align:center"><div style="font-size:36px">☁️</div><div style="color:#aaa;font-size:12px">Не удалось загрузить.<br>Откройте в Яндекс Диске.</div><a href="${ea(key)}" target="_blank" style="background:#f5c518;color:#111;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:700;font-size:12px">Открыть</a></div>`;
+    }
+  });
+  const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{const vid=entry.target.querySelector('video');if(vid){if(entry.isIntersecting)vid.play().catch(()=>{});else vid.pause();}});},{threshold:0.6});
+  feed.querySelectorAll('.vertical-card').forEach(card=>observer.observe(card));
+  feed.querySelectorAll('.vertical-action-btn.internal').forEach(btn=>{btn.addEventListener('click',()=>{const uid=Number(btn.dataset.actionUid);const ti=videos.findIndex(x=>x.uid===uid);if(ti>=0&&!videos[ti].vertical)openPlayer(ti,videos.filter(v=>!v.vertical));else toast('Видео не найдено');});});
+  feed.querySelectorAll('[data-share-v]').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const title=btn.dataset.shareTitle||'Видео';
+      if(navigator.share){
+        try{ await navigator.share({title, url:location.href}); }
+        catch(_){}
+      } else {
+        try{ await navigator.clipboard.writeText(location.href); toast('Ссылка скопирована'); }
+        catch(_){ toast('Поделиться недоступно'); }
+      }
+    });
+  });
+  feed.querySelectorAll('[data-del-v]').forEach(btn=>{btn.addEventListener('click',async e=>{e.stopPropagation();const uid=Number(btn.dataset.delV);const yes=await confirmDlg();if(!yes)return;videos=videos.filter(v=>v.uid!==uid);save();renderFeed();renderProfile();});});
+}
+
+/* PROFILE */
+function renderProfile(){
+  document.getElementById('statCount').textContent=videos.length;
+  document.getElementById('statSubs').textContent=subscriptions.length;
+  const pg=document.getElementById('profileGrid');
+  pg.innerHTML=videos.slice(0,9).map((v,i)=>`<div class="prof-cell" data-pidx="${i}">${v.thumb?`<img src="${ea(v.thumb)}" loading="lazy">`:'<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>'}</div>`).join('');
+  pg.querySelectorAll('.prof-cell').forEach(c=>c.addEventListener('click',()=>openPlayer(Number(c.dataset.pidx),videos.slice(0,9))));
+  renderSubs();
+}
+function renderSubs(){
+  const list=document.getElementById('subList');
+  if(!subscriptions.length){list.innerHTML='<div style="text-align:center;padding:14px;font-size:12px;color:var(--text2)">Нет активных подписок</div>';return;}
+  list.innerHTML=subscriptions.map((s,i)=>`<div class="sub-item"><div class="sub-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><div style="flex:1;min-width:0;"><div class="sub-name">${eh(s.name||'Без имени')}</div><div class="sub-url">${eh(s.url)}</div></div><div class="sub-actions"><button class="sub-btn sub-refresh" data-idx="${i}"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button><button class="sub-btn danger" data-idx="${i}"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div></div>`).join('');
+  list.querySelectorAll('.sub-refresh').forEach(b=>b.addEventListener('click',e=>{const i=Number(e.currentTarget.dataset.idx);fetchSubscription(subscriptions[i]).then(()=>{renderGrid();renderFeed();renderProfile();});}));
+  list.querySelectorAll('.danger').forEach(b=>b.addEventListener('click',async e=>{const i=Number(e.currentTarget.dataset.idx);subscriptions.splice(i,1);saveSubs();renderSubs();renderProfile();}));
+}
+document.getElementById('btnAddSub').addEventListener('click',()=>{document.getElementById('subModal').classList.add('open');document.getElementById('subUrl').value='';document.getElementById('vkToken').value=vkServiceToken;document.getElementById('subVkHint').style.display='none';});
+document.getElementById('btnSubCancel').addEventListener('click',()=>document.getElementById('subModal').classList.remove('open'));
+document.getElementById('subModal').addEventListener('click',e=>{if(e.target===document.getElementById('subModal'))document.getElementById('subModal').classList.remove('open');});
+document.getElementById('subUrl').addEventListener('input',function(){const val=this.value.trim();const isVK=/vk\.com\/video\/pl/i.test(val)||/vk\.com\/@/i.test(val)||/vkvideo\.ru\/@/i.test(val);document.getElementById('subVkHint').style.display=isVK?'block':'none';});
+document.getElementById('btnSubSave').addEventListener('click',async function(){const url=document.getElementById('subUrl').value.trim();const cat=document.getElementById('subCat').value;const isVK=/vk\.com\/video\/pl/i.test(url)||/vk\.com\/@/i.test(url)||/vkvideo\.ru\/@/i.test(url);let token='';if(isVK){token=document.getElementById('vkToken').value.trim();if(!token){toast('Введите сервисный ключ VK');return;}vkServiceToken=token;localStorage.setItem('vidr_vk_token',token);}if(!url){toast('Введите ссылку');return;}const existing=subscriptions.find(s=>s.url===url);if(existing){toast('Такая подписка уже есть');return;}let platform='youtube';if(isVK){platform=/pl(-?\d+)_(\d+)/.test(url)?'vk':'vk_channel';}const sub={url,cat,platform,name:url};try{await fetchSubscription(sub,true);}catch(e){toast('Не удалось загрузить видео. Проверьте ссылку.');console.error(e);return;}subscriptions.push(sub);saveSubs();document.getElementById('subModal').classList.remove('open');renderSubs();renderProfile();renderGrid();renderFeed();toast('Подписка добавлена');});
+
+async function fetchSubscription(sub,isNew=false){const cat=sub.cat||'🎭 Прочее';if(sub.platform==='youtube'){let feedUrl='';const channelMatch=sub.url.match(/youtube\.com\/(@[a-zA-Z0-9_-]+)/);if(channelMatch)feedUrl=`https://www.youtube.com/feeds/videos.xml?user=${channelMatch[1]}`;const playlistMatch=sub.url.match(/[?&]list=([a-zA-Z0-9_-]+)/);if(playlistMatch)feedUrl=`https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistMatch[1]}`;if(!feedUrl)throw new Error('Invalid YouTube URL');const resp=await fetch(feedUrl);const text=await resp.text();const parser=new DOMParser();const xml=parser.parseFromString(text,'text/xml');const entries=xml.querySelectorAll('entry');let added=0;entries.forEach(entry=>{const link=entry.querySelector('link')?.getAttribute('href')||'';const videoId=link.match(/[?&]v=([a-zA-Z0-9_-]+)/)?.[1];if(!videoId)return;const title=entry.querySelector('title')?.textContent||'Без названия';if(!videos.find(v=>v.type==='youtube'&&v.id===videoId)){videos.unshift({uid:Date.now()+Math.random(),type:'youtube',id:videoId,title,cat,views:'0',thumb:`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,embedUrl:`https://www.youtube.com/embed/${videoId}`,vertical:false});added++;}});save();if(!isNew&&added>0)toast(`Добавлено ${added} новых видео`);return;}throw new Error('Неподдерживаемая платформа');}
+(async function(){for(const sub of subscriptions){try{await fetchSubscription(sub);}catch(e){console.warn(e);}}renderGrid();renderFeed();renderProfile();})();
+
+/* ══ PLAYER ══ */
+let playlist=[],pIdx=0,isPlaying=true,isMuted=false;
+let vkPaused=false,currentVkSrc='';
+let duration=0,curTime=0,trackInterval=null,activeVid=null;
+let isTransitioning=false;
+
+function openPlayer(idx,list){
+  playlist=list||videos.filter(v=>!v.vertical);pIdx=idx;isPlaying=true;isMuted=false;vkPaused=false;
+  document.getElementById('playerScreen').classList.add('open');
+  hideVkOverlay();resetTimeline();updUI();
+  buildSlide('slideMain',playlist[pIdx]);preloadNext();updateDots();
+}
+function closePlayer(){
+  document.getElementById('playerScreen').classList.remove('open');
+  stopTracking();
+  document.getElementById('slideMain').innerHTML='';document.getElementById('slideNext').innerHTML='';
+  document.getElementById('slideNext').style.transform='translateY(100%)';
+  hideVkOverlay();isTransitioning=false;
+}
+document.getElementById('btnClose').addEventListener('click',closePlayer);
+
+function updUI(){
+  document.getElementById('iconPlay').style.display=isPlaying?'none':'block';
+  document.getElementById('iconPause').style.display=isPlaying?'block':'none';
+}
+function showVkOverlay(){document.getElementById('vkOverlay').classList.add('show');}
+function hideVkOverlay(){document.getElementById('vkOverlay').classList.remove('show');}
+function resetTimeline(){duration=0;curTime=0;activeVid=null;const tl=document.getElementById('timeline');tl.value=0;tl.max=100;document.getElementById('timeCur').textContent='0:00';document.getElementById('timeDur').textContent='0:00';}
+function updateTLUI(){const tl=document.getElementById('timeline');if(duration>0&&isFinite(duration)){tl.max=Math.floor(duration*10)/10;tl.value=Math.min(Math.floor(curTime*10)/10,parseFloat(tl.max));document.getElementById('timeDur').textContent=fmtTime(duration);}document.getElementById('timeCur').textContent=fmtTime(curTime);}
+function startTracking(vid){stopTracking();activeVid=vid;const init=()=>{if(vid.duration&&isFinite(vid.duration)&&vid.duration>0){duration=vid.duration;updateTLUI();}};vid.addEventListener('loadedmetadata',init);if(vid.readyState>=1)init();trackInterval=setInterval(()=>{if(!activeVid)return;if(activeVid.duration&&isFinite(activeVid.duration)&&activeVid.duration>0&&duration===0)duration=activeVid.duration;if(!activeVid.paused&&duration>0)curTime=activeVid.currentTime;updateTLUI();},250);}
+function stopTracking(){if(trackInterval){clearInterval(trackInterval);trackInterval=null;}activeVid=null;}
+
+document.getElementById('timeline').addEventListener('input',()=>{if(activeVid&&duration>0){activeVid.currentTime=parseFloat(document.getElementById('timeline').value);curTime=activeVid.currentTime;updateTLUI();}});
+document.getElementById('ctrlPlay').addEventListener('click',e=>{e.stopPropagation();if(vkPaused){setVkPaused(false);return;}const v=document.getElementById('slideMain').querySelector('video');if(!v){setVkPaused(true);return;}if(isPlaying){v.pause();isPlaying=false;}else{v.play().catch(()=>{});isPlaying=true;}updUI();});
+document.getElementById('vkOverlay').addEventListener('click',()=>setVkPaused(false));
+document.getElementById('ctrlPrev').addEventListener('click',goPrev);
+document.getElementById('ctrlNext').addEventListener('click',goNext);
+document.getElementById('btnSettings').addEventListener('click',()=>toast('Настройки — скоро'));
+
+function setVkPaused(p){vkPaused=p;isPlaying=!p;updUI();const iframe=document.getElementById('slideMain').querySelector('iframe');if(p){if(iframe){currentVkSrc=iframe.src;iframe.src='about:blank';}showVkOverlay();stopTracking();}else{if(iframe&&currentVkSrc)iframe.src=currentVkSrc;hideVkOverlay();}}
+
+function renderInfo(v){
+  if(!v)return;
+  // Название целиком слева, категория справа
+  document.getElementById('playerTitleLeft').textContent=v.title||'';
+  document.getElementById('playerTitleRight').textContent=v.cat||'';
+  document.getElementById('playerSourceRow').textContent=v.cat||'Все видео';
+}
+
+function buildSlide(slotId,v){return new Promise(async resolve=>{const slot=document.getElementById(slotId);if(!v){slot.innerHTML='';resolve();return;}const isMain=slotId==='slideMain';slot.innerHTML='<div class="slide-loading"><div class="spinner"></div><span>Загрузка</span></div>';if(isMain){stopTracking();hideVkOverlay();resetTimeline();renderInfo(v);isPlaying=true;updUI();}
+const showTL=()=>{document.getElementById('timeline').style.display='block';document.querySelector('.player-time-row').style.display='flex';};
+const hideTL=()=>{document.getElementById('timeline').style.display='none';document.querySelector('.player-time-row').style.display='none';};
+if(v.type==='local'){const src=localFiles[v.uid];if(!src){slot.innerHTML='<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#000;color:#555">Файл недоступен</div>';resolve();return;}const vid=mkVid(src,isMain);slot.innerHTML='';slot.appendChild(vid);if(isMain){showTL();startTracking(vid);vid.play().catch(()=>{});}resolve();}
+else if(v.type==='clip'){const vid=mkVid(v.id,isMain);slot.innerHTML='';slot.appendChild(vid);if(isMain){showTL();startTracking(vid);vid.play().catch(()=>{});}resolve();}
+else if(v.type==='gdrive'){slot.innerHTML=`<iframe src="${ea(v.embedUrl)}" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;if(isMain)hideTL();resolve();}
+else if(v.type==='yadisk'){try{const r=await fetch(`https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key=${encodeURIComponent(v.id)}`);const d=await r.json();if(d.href){const vid=mkVid(d.href,isMain);slot.innerHTML='';slot.appendChild(vid);if(isMain){showTL();startTracking(vid);vid.play().catch(()=>{});}}else slot.innerHTML=yadiskFb(v.id);}catch(_){slot.innerHTML=yadiskFb(v.id);}resolve();}
+else if(v.type==='vk'||v.type==='vk_clip'){const src=v.embedSrc||`https://vkvideo.ru/video_ext.php?oid=${v.oid}&id=${v.id}${v.hash?'&hash='+v.hash:''}&hd=2&autoplay=1&mute=0`;slot.innerHTML=`<iframe src="${ea(src)}" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`;if(isMain){currentVkSrc=src;hideVkOverlay();hideTL();}resolve();}
+else if(v.type==='youtube'){slot.innerHTML=`<iframe src="${ea(v.embedUrl)}?autoplay=1&mute=0" allowfullscreen allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`;if(isMain)hideTL();resolve();}
+else resolve();});}
+
+function mkVid(src,isMain){const v=document.createElement('video');v.src=src;v.playsInline=true;v.muted=false;v.volume=1;v.style.cssText='width:100%;height:100%;background:#000;';if(isMain){v.addEventListener('ended',goNext);v.addEventListener('play',()=>{isPlaying=true;updUI();});v.addEventListener('pause',()=>{isPlaying=false;updUI();});}return v;}
+function yadiskFb(url){return`<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:30px;text-align:center;color:#555;background:#000"><div style="font-size:40px">☁️</div><p>Яндекс Диск не разрешает прямое воспроизведение</p><a href="${ea(url)}" target="_blank" style="background:#ff0000;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700;font-size:12px;">Открыть в Диске</a></div>`;}
+
+function goNext(){if(pIdx+1>=playlist.length){toast('Последнее видео');return;}if(isTransitioning)return;hideVkOverlay();vkPaused=false;showLbl('up');animSwipe('up');}
+function goPrev(){if(pIdx<=0){toast('Первое видео');return;}if(isTransitioning)return;hideVkOverlay();vkPaused=false;showLbl('down');animSwipe('down');}
+function showLbl(dir){const el=document.getElementById(dir==='up'?'lblUp':'lblDown');el.classList.add('show');setTimeout(()=>el.classList.remove('show'),700);}
+function preloadNext(){const ns=document.getElementById('slideNext');if(pIdx+1<playlist.length){ns.style.transform='translateY(100%)';buildSlide('slideNext',playlist[pIdx+1]);}else ns.innerHTML='';}
+function updateDots(){const total=Math.min(playlist.length,9);document.getElementById('swipeDots').innerHTML=Array.from({length:total},(_,i)=>`<div class="s-dot${i===Math.min(pIdx,total-1)?' active':''}"></div>`).join('');}
+
+function animSwipe(dir){isTransitioning=true;stopTracking();const main=document.getElementById('slideMain'),next=document.getElementById('slideNext');const T='transform .3s cubic-bezier(.4,0,.2,1)';if(dir==='up'){main.style.transition=T;main.style.transform='translateY(-100%)';next.style.transition=T;next.style.transform='translateY(0)';setTimeout(async()=>{pIdx++;main.style.transition='none';main.style.transform='translateY(0)';next.style.transition='none';next.style.transform='translateY(100%)';next.innerHTML='';await buildSlide('slideMain',playlist[pIdx]);renderInfo(playlist[pIdx]);isPlaying=true;updUI();preloadNext();updateDots();isTransitioning=false;},310);}else{buildSlide('slideNext',playlist[pIdx-1]).then(()=>{const ns=document.getElementById('slideNext');ns.style.transition='none';ns.style.transform='translateY(-100%)';void ns.offsetHeight;main.style.transition=T;main.style.transform='translateY(100%)';ns.style.transition=T;ns.style.transform='translateY(0)';setTimeout(async()=>{pIdx--;main.style.transition='none';main.style.transform='translateY(0)';ns.style.transition='none';ns.style.transform='translateY(100%)';ns.innerHTML='';await buildSlide('slideMain',playlist[pIdx]);renderInfo(playlist[pIdx]);isPlaying=true;updUI();preloadNext();updateDots();isTransitioning=false;},310);});}}
+
+(function(){const c=document.getElementById('swipeContainer');let sy=0,sx=0,moved=false;c.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;sx=e.touches[0].clientX;moved=false;},{passive:true});c.addEventListener('touchmove',e=>{if(Math.abs(e.touches[0].clientY-sy)>12||Math.abs(e.touches[0].clientX-sx)>12)moved=true;},{passive:true});c.addEventListener('touchend',e=>{if(!moved)return;const dy=e.changedTouches[0].clientY-sy,dx=e.changedTouches[0].clientX-sx;if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>50){dy<0?goNext():goPrev();}},{passive:true});let msy=0,msx=0,md=false,mm=false;c.addEventListener('mousedown',e=>{msy=e.clientY;msx=e.clientX;md=true;mm=false;});c.addEventListener('mousemove',e=>{if(md&&(Math.abs(e.clientY-msy)>8||Math.abs(e.clientX-msx)>8))mm=true;});c.addEventListener('mouseup',e=>{if(!md)return;md=false;if(!mm)return;const dy=e.clientY-msy,dx=e.clientX-msx;if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>50){dy<0?goNext():goPrev();}});})();
+
+/* Fullscreen */
+function toggleFullscreen(){const player=document.getElementById('playerScreen');if(!document.fullscreenElement&&!document.webkitFullscreenElement){if(player.requestFullscreen)player.requestFullscreen();else if(player.webkitRequestFullscreen)player.webkitRequestFullscreen();if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}else{if(document.exitFullscreen)document.exitFullscreen();else if(document.webkitExitFullscreen)document.webkitExitFullscreen();}}
+document.getElementById('btnFullscreen').addEventListener('click',toggleFullscreen);
+function handleFullscreenChange(){const icon=document.getElementById('fullscreenIcon');if(document.fullscreenElement||document.webkitFullscreenElement){icon.innerHTML='<polyline points="4 8 8 4 4 4 4 8"/><polyline points="20 8 16 4 20 4 20 8"/><polyline points="16 20 20 20 20 16"/><polyline points="8 20 4 20 4 16"/>';if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}else{icon.innerHTML='<polyline points="8 3 3 3 3 8"/><polyline points="21 8 21 3 16 3"/><polyline points="16 21 21 21 21 16"/><polyline points="3 16 3 21 8 21"/>';if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}}
+document.addEventListener('fullscreenchange',handleFullscreenChange);document.addEventListener('webkitfullscreenchange',handleFullscreenChange);
+let lastTap=0;document.getElementById('swipeContainer').addEventListener('click',e=>{const now=Date.now();if(now-lastTap<300){e.preventDefault();toggleFullscreen();}lastTap=now;});
+
+document.getElementById('searchInput').addEventListener('input',e=>renderGrid(e.target.value));
+renderGrid();updUI();
+</script>
+</body>
+</html>
